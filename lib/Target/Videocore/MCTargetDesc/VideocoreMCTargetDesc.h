@@ -11,11 +11,33 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/Support/DataTypes.h"
+
 #ifndef VIDEOCOREMCTARGETDESC_H
 #define VIDEOCOREMCTARGETDESC_H
 
 namespace llvm {
+class MCAsmBackend;
+class MCCodeEmitter;
+class MCContext;
+class MCInstrInfo;
+class MCObjectWriter;
+class MCRegisterInfo;
+class MCSubtargetInfo;
+class StringRef;
 class Target;
+class raw_ostream;
+
+MCCodeEmitter *createVideocoreMCCodeEmitter(const MCInstrInfo &MCII,
+                                            const MCRegisterInfo &,
+                                            const MCSubtargetInfo &STI,
+                                            MCContext &Ctx);
+
+MCObjectWriter *createVideocoreELFObjectWriter(raw_ostream &OS,
+                                            uint8_t OSABI,
+                                            bool IsLittleEndian);
+
+MCAsmBackend *createVideocoreAsmBackend(const Target &T, StringRef TT, StringRef CPU);
 
 extern Target TheVideocoreTarget;
 
