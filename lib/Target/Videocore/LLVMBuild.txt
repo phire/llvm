@@ -16,16 +16,18 @@
 ;===------------------------------------------------------------------------===;
 
 [common]
-subdirectories = MCTargetDesc TargetInfo
+subdirectories = MCTargetDesc TargetInfo InstPrinter
 
 [component_0]
 type = TargetGroup
 name = Videocore
 parent = Target
 
+has_asmprinter = 1
+
 [component_1]
 type = Library
 name = VideocoreCodeGen
 parent = Videocore
-required_libraries = CodeGen Core MC SelectionDAG VideocoreDesc VideocoreInfo Support Target
+required_libraries = AsmPrinter CodeGen Core MC SelectionDAG VideocoreDesc VideocoreInfo Support Target
 add_to_library_groups = Videocore

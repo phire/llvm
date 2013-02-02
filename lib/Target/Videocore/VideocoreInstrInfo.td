@@ -31,6 +31,8 @@ def callseq_start : SDNode<"ISD::CALLSEQ_START", SDT_VCCallSeqStart,
 def callseq_end   : SDNode<"ISD::CALLSEQ_END",   SDT_VCCallSeqEnd,
                            [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
 
+def retflag       : SDNode<"VideocoreISD::RET_FLAG", SDTNone,
+                               [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
 
 //===----------------------------------------------------------------------===//
 // Instruction Pattern Stuff
@@ -59,9 +61,20 @@ def immU5 : PatLeaf<(imm), [{
   return (uint32_t)N->getZExtValue() < (1 << 5);
 }]>;
 
+def u5imm   : Operand<i32> {
+      let PrintMethod = "printU5ImmOperand";
+}
+
+def immU4 : PatLeaf<(imm), [{
+  return (uint32_t)N->getZExtValue() < (1 << 4);
+}]>;
+
+
 def immU16 : PatLeaf<(imm), [{
   return (uint32_t)N->getZExtValue() < (1 << 16);
 }]>;
+
+def immSExt16  : PatLeaf<(imm), [{ return isInt<16>(N->getSExtValue()); }]>;
 
 // Instruction operand types
 def calltarget  : Operand<i32>;
@@ -87,6 +100,10 @@ let PrintMethod = "printMemOperand" in {
   def MEMqi : Operand<i32> {
     let MIOperandInfo = (ops LowReg, i32imm);
   }
+
+  def MEMq : Operand<i32> {
+    let MIOperandInfo = (ops LowReg);
+  }
 }
 
 // Jump tables.
@@ -97,6 +114,8 @@ def InlineJT : Operand<i32> {
 def InlineJT32 : Operand<i32> {
   let PrintMethod = "printInlineJT32";
 }
+
+def addr : ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
 
 //===----------------------------------------------------------------------===//
 // Instruction Class Templates
@@ -127,37 +146,59 @@ def ADJCALLSTACKUP : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2),
 //===----------------------------------------------------------------------===//
 
 def LDWqq  : LDST16<0, 0, 
-		(outs LowReg:$dst), (ins MEMqi:$addr), "ld $dst, ($addr)",
+		(outs LowReg:$dst), (ins MEMq:$addr), "ld $dst, $addr",
 		 [(set LowReg:$dst, (load ADDRrr:$addr))]>;
 
 def LDBqq  : LDST16<1, 0, 
-		(outs LowReg:$dst), (ins MEMqi:$Rs), "ldb $dst, ($addr)",
-		 [(set LowReg:$dst, (zextloadi8 ADDRrr:$Rs))]>;
+		(outs LowReg:$dst), (ins MEMq:$addr), "ldb $dst, $addr",
+		 [(set LowReg:$dst, (zextloadi8 ADDRrr:$addr))]>;
 
 def LDHqq  : LDST16<2, 0, 
-		(outs LowReg:$dst), (ins MEMqi:$addr), "ldh $dst, ($addr)",
+		(outs LowReg:$dst), (ins MEMq:$addr), "ldh $dst, $addr",
 		 [(set LowReg:$dst, (zextloadi16 ADDRrr:$addr))]>;
 
 def LDHSqq : LDST16<3, 0, 
-		(outs LowReg:$dst), (ins MEMqi:$addr), "ldhs $dst, ($addr)",
+		(outs LowReg:$dst), (ins MEMq:$addr), "ldhs $dst, $addr",
 		 [(set LowReg:$dst, (sextloadi16 ADDRrr:$addr))]>;
 
 def STWqq  : LDST16<0, 1, 
-		(outs), (ins LowReg:$src, MEMqi:$addr), "st $src, ($addr)",
+		(outs), (ins LowReg:$src, MEMq:$addr), "st $src, $addr",
 		 [(store LowReg:$src, ADDRrr:$addr)]>;
 
 def STBqq  : LDST16<1, 1, 
-		(outs), (ins LowReg:$src, MEMqi:$addr), "stb $src, ($addr)",
+		(outs), (ins LowReg:$src, MEMq:$addr), "stb $src, $addr",
                 [(truncstorei8 LowReg:$src, ADDRrr:$addr)]>;
 
 def STHqq  : LDST16<2, 1, 
-		(outs), (ins LowReg:$src, MEMqi:$addr), "sth $src, ($addr)",
+		(outs), (ins LowReg:$src, MEMq:$addr), "sth $src, $addr",
                  [(truncstorei16 LowReg:$src, ADDRrr:$addr)]>;
 
 def STHSqq : LDST16<3, 1, 
-		(outs), (ins LowReg:$src, MEMqi:$addr), "sths $src, ($addr)",
+		(outs), (ins LowReg:$src, MEMqi:$addr), "sths $src, $addr",
                  [(truncstorei16 LowReg:$src, ADDRrr:$addr)]>;
 
+def STWrri : InstVC32<(outs), (ins IntReg:$src, MEMri:$addr), "st $src, $addr",
+        [(store IntReg:$src, ADDRri:$addr)]>;
+
+//def MOVqq : ArithLogicQQ<0,
+//        (outs LowReg:$dst), (ins LowReg:$src), "mov $dst, $src",
+//        [(set LowReg:$dst, LowReg:$src)]>;
+
+def MOVqi : ArithLogicQI<0,
+        (outs LowReg:$dst), (ins u5imm:$imm), "mov $dst, $imm",
+        [(set LowReg:$dst, (i32 imm:$imm))]>;
+
+def MOVrr : ArithLogicRR<0,
+        (outs IntReg:$dst), (ins IntReg:$ra), "mov $ra, $ra",
+        [(set IntReg:$dst, IntReg:$ra)]>;
+
+
+let isReturn=1, isTerminator=1, isCodeGenOnly=1,
+        isBarrier=1, hasCtrlDep=1 in
+    def BLR : InstVC16<(outs), (ins), "blr",
+                [(retflag)]> {
+        let Inst{15-0} = 0x5a;
+}
 
 //===----------------------------------------------------------------------===//
 // Non-Instruction Patterns

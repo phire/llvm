@@ -19,5 +19,5 @@
 type = Library
 name = VideocoreDesc
 parent = Videocore
-required_libraries = MC VideocoreInfo
+required_libraries = MC VideocoreAsmPrinter VideocoreInfo
 add_to_library_groups = Videocore

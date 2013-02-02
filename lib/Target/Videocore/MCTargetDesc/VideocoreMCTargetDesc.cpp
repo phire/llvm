@@ -13,6 +13,7 @@
 
 #include "VideocoreMCTargetDesc.h"
 #include "VideocoreMCAsmInfo.h"
+#include "InstPrinter/VideocoreInstPrinter.h"
 #include "llvm/MC/MCCodeGenInfo.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
@@ -69,6 +70,15 @@ static MCCodeGenInfo *createVideocoreMCCodeGenInfo(StringRef TT, Reloc::Model RM
   return X;
 }
 
+static MCInstPrinter *createVideocoreMCInstPrinter(const Target &T,
+                                                 unsigned SyntaxVariant,
+                                                 const MCAsmInfo &MAI,
+                                                 const MCInstrInfo &MII,
+                                                 const MCRegisterInfo &MRI,
+                                                 const MCSubtargetInfo &STI) {
+  return new VideocoreInstPrinter(MAI, MII, MRI);
+}
+
 // Force static initialization.
 extern "C" void LLVMInitializeVideocoreTargetMC() {
   // Register the MC asm info.
@@ -87,4 +97,6 @@ extern "C" void LLVMInitializeVideocoreTargetMC() {
   // Register the MC subtarget info.
   TargetRegistry::RegisterMCSubtargetInfo(TheVideocoreTarget,
                                           createVideocoreMCSubtargetInfo);
+  TargetRegistry::RegisterMCInstPrinter(TheVideocoreTarget,
+                                        createVideocoreMCInstPrinter);
 }

@@ -13,14 +13,15 @@ tablegen(LLVM VideocoreGenCallingConv.inc -gen-callingconv)
 add_public_tablegen_target(VideocoreCommonTableGen)
 
 add_llvm_target(VideocoreCodeGen
-  #VideocoreAsmPrinter.cpp
+  VideocoreAsmPrinter.cpp
   VideocoreInstrInfo.cpp
   VideocoreISelDAGToDAG.cpp
   VideocoreISelLowering.cpp
   VideocoreFrameLowering.cpp
   VideocoreMachineFunctionInfo.cpp
+  VideocoreMCInstLower.cpp
   VideocoreRegisterInfo.cpp
-  #VideocoreSubtarget.cpp
+  VideocoreSubtarget.cpp
   VideocoreTargetMachine.cpp
   VideocoreSelectionDAGInfo.cpp
   )
@@ -29,4 +30,6 @@ add_dependencies(LLVMVideocoreCodeGen intrinsics_gen)
 
 add_subdirectory(TargetInfo)
 add_subdirectory(MCTargetDesc)
+add_subdirectory(InstPrinter)
+
 

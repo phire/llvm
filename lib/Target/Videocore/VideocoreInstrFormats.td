@@ -66,5 +66,56 @@ class LEA16_sp<bit ld_st, dag outs, dag ins, string asmstr, list<dag> pattern>
   let Inst{4-0} = Rd;
 }
 
+class ArithLogicQQ<bits<5> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+   : InstVC16<outs, ins, asmstr, pattern> {
+  bits<4> Rd;
+  bits<4> Rs;
+
+  let Inst{15-13} = 2;
+  let Inst{12-8} = op;
+  let Inst{7-4} = Rs;
+  let Inst{3-0} = Rd;
+}
+
+class ArithLogicRR<bits<5> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+   : InstVC32<outs, ins, asmstr, pattern> {
+  bits<5> Rd;
+  bits<5> Ra;
+
+  let Inst{31-26} = 0x30;
+  let Inst{25-21} = op;
+  let Inst{20-16} = Rd;
+  let Inst{15-11} = Ra;
+  let Inst{10-7 } = 0xe;
+  let Inst{6-5} = 0;
+  let Inst{4-0} = 0;
+}
+
+class ArithLogicRRR<bits<5> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+   : InstVC32<outs, ins, asmstr, pattern> {
+  bits<5> Rd;
+  bits<5> Ra;
+  bits<5> Rb;
+
+  let Inst{31-26} = 0x30;
+  let Inst{25-21} = op;
+  let Inst{20-16} = Rd;
+  let Inst{15-11} = Ra;
+  let Inst{10-7 } = 0xe;
+  let Inst{6-5} = 0;
+  let Inst{4-0} = Rb;
+}
+
+class ArithLogicQI<bits<4> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+   : InstVC16<outs, ins, asmstr, pattern> {
+  bits<4> Rd;
+  bits<5> immU5;
+
+  let Inst{15-13} = 3;
+  let Inst{12-9} = op;
+  let Inst{8-4} = immU5;
+  let Inst{3-0} = Rd;
+}
+
 
 

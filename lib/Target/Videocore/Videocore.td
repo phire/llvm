@@ -36,6 +36,11 @@ class Proc<string Name, list<SubtargetFeature> Features>
 
 def : Proc<"generic",      []>;
 
+def VideocoreAsmWriter : AsmWriter {
+    string AsmWriterClassName = "InstPrinter";
+    bit isMCAsmWriter = 1;
+}
+
 //===----------------------------------------------------------------------===//
 // Declare the target which we are implementing
 //===----------------------------------------------------------------------===//
@@ -43,4 +48,5 @@ def : Proc<"generic",      []>;
 def Videocore : Target {
   // Pull in Instruction Info:
   let InstructionSet = VideocoreInstrInfo;
+  let AssemblyWriters = [VideocoreAsmWriter];
 }

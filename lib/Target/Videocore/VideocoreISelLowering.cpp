@@ -80,4 +80,70 @@ LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   }
 }
 
+/// LowerFormalArguments - transform physical registers into virtual registers
+/// and generate load operations for arguments places on the stack.
+SDValue VideocoreTargetLowering::
+LowerFormalArguments(SDValue Chain,
+                     CallingConv::ID CallConv,
+                     bool isVarArg,
+                     const SmallVectorImpl<ISD::InputArg> &Ins,
+                     DebugLoc dl, SelectionDAG &DAG,
+                     SmallVectorImpl<SDValue> &InVals) const {
+  return Chain;
+}
+
+//===----------------------------------------------------------------------===//
+//               Return Value Calling Convention Implementation
+//===----------------------------------------------------------------------===//
+
+SDValue
+VideocoreTargetLowering::LowerReturn(SDValue Chain,
+                                CallingConv::ID CallConv, bool isVarArg,
+                                const SmallVectorImpl<ISD::OutputArg> &Outs,
+                                const SmallVectorImpl<SDValue> &OutVals,
+                                DebugLoc dl, SelectionDAG &DAG) const {
+    SmallVector<CCValAssign, 16> RVLocs;
+    CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(),
+                 getTargetMachine(), RVLocs, *DAG.getContext());
+    CCInfo.AnalyzeReturn(Outs, RetCC_VC4);
+
+    // If this is the first return lowered for this function, add the regs to the
+    // liveout set for the function.
+    if (DAG.getMachineFunction().getRegInfo().liveout_empty()) {
+        for (unsigned i = 0; i != RVLocs.size(); ++i)
+        DAG.getMachineFunction().getRegInfo().addLiveOut(RVLocs[i].getLocReg());
+    }
+
+    SDValue Flag;
+
+  // Copy the result values into the output registers.
+    for (unsigned i = 0; i != RVLocs.size(); ++i) {
+        CCValAssign &VA = RVLocs[i];
+        assert(VA.isRegLoc() && "Can only return in registers!");
+
+        SDValue Arg = OutVals[i];
+
+        switch (VA.getLocInfo()) {
+        default: llvm_unreachable("Unknown loc info!");
+        case CCValAssign::Full: break;
+        case CCValAssign::AExt:
+            Arg = DAG.getNode(ISD::ANY_EXTEND, dl, VA.getLocVT(), Arg);
+            break;
+        case CCValAssign::ZExt:
+            Arg = DAG.getNode(ISD::ZERO_EXTEND, dl, VA.getLocVT(), Arg);
+            break;
+        case CCValAssign::SExt:
+            Arg = DAG.getNode(ISD::SIGN_EXTEND, dl, VA.getLocVT(), Arg);
+            break;
+        }
+
+        Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), Arg, Flag);
+        Flag = Chain.getValue(1);
+    }
+
+    if (Flag.getNode())
+        return DAG.getNode(VideocoreISD::RET_FLAG, dl, MVT::Other, Chain, Flag);
+    else
+        return DAG.getNode(VideocoreISD::RET_FLAG, dl, MVT::Other, Chain);
+}
 
