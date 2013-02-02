@@ -30,7 +30,8 @@ VideocoreTargetMachine::VideocoreTargetMachine(const Target &T, StringRef TT,
                                        Reloc::Model RM, CodeModel::Model CM,
                                        CodeGenOpt::Level OL)
   : LLVMTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL),
-    DL("e-p32:32-i32:32:32"),
+    DL("e-p:32:32-i32:32:32"),
+    Subtarget(TT, CPU, FS, true),
     InstrInfo(),
     TLInfo(*this), TSInfo(*this),
     FrameLowering(){
@@ -56,6 +57,6 @@ TargetPassConfig *VideocoreTargetMachine::createPassConfig(PassManagerBase &PM) 
 }
 
 bool VideocorePassConfig::addInstSelector() {
-  //addPass(createVideocoreISelDag(getVideocoreTargetMachine(), getOptLevel()));
+  addPass(createVideocoreISelDag(getVideocoreTargetMachine()));
   return false;
 }

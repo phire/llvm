@@ -19,9 +19,10 @@
 #include "llvm/Target/TargetLowering.h"
 
 namespace llvm {
-  namespace SPISD {
+  namespace VideocoreISD {
     enum {
-      FIRST_NUMBER = ISD::BUILTIN_OP_END
+      FIRST_NUMBER = ISD::BUILTIN_OP_END,
+      RET_FLAG
     };
   }
 
@@ -30,6 +31,23 @@ namespace llvm {
     VideocoreTargetLowering(TargetMachine &TM);
     virtual SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const;
 
+  private:
+
+    //- must be exist without function all
+    virtual SDValue
+      LowerFormalArguments(SDValue Chain,
+                           CallingConv::ID CallConv, bool isVarArg,
+                           const SmallVectorImpl<ISD::InputArg> &Ins,
+                           DebugLoc dl, SelectionDAG &DAG,
+                           SmallVectorImpl<SDValue> &InVals) const;
+
+    //- must be exist without function all
+    virtual SDValue
+      LowerReturn(SDValue Chain,
+                  CallingConv::ID CallConv, bool isVarArg,
+                  const SmallVectorImpl<ISD::OutputArg> &Outs,
+                  const SmallVectorImpl<SDValue> &OutVals,
+                  DebugLoc dl, SelectionDAG &DAG) const;
 
   };
 } // end namespace llvm

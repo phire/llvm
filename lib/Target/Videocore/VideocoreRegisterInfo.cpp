@@ -50,5 +50,34 @@ unsigned VideocoreRegisterInfo::getFrameRegister(const MachineFunction &MF) cons
 
 void VideocoreRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
                            int SPAdj, RegScavenger *RS) const {
-  // Implement me!!!
+  assert(SPAdj == 0 && "Unexpected");
+
+  // Get the instruction.
+  MachineInstr &MI = *II;
+  // Get the instruction's basic block.
+  MachineBasicBlock &MBB = *MI.getParent();
+  // Get the basic block's function.
+  MachineFunction &MF = *MBB.getParent();
+  // Get the frame info.
+  MachineFrameInfo *MFI = MF.getFrameInfo();
+  const TargetFrameLowering *TFI = MF.getTarget().getFrameLowering();
+  DebugLoc dl = MI.getDebugLoc();
+
+  // Find out which operand is the frame index.
+  unsigned FIOperandNo = 0;
+  while (!MI.getOperand(FIOperandNo).isFI()) {
+    ++FIOperandNo;
+    assert(FIOperandNo != MI.getNumOperands() &&
+           "Instr doesn't have FrameIndex operand!");
+  }
+  int FrameIndex = MI.getOperand(FIOperandNo).getIndex();
+
+  MI.getOperand(FIOperandNo).ChangeToRegister(VC::SP, false);
+  int OffsetOperandNo = FIOperandNo + 1;
+
+  int Offset = MFI->getObjectOffset(FrameIndex);
+
+  Offset += MI.getOperand(OffsetOperandNo).getImm();
+
+  MI.getOperand(OffsetOperandNo).ChangeToImmediate(Offset);
 }

@@ -18,6 +18,7 @@
 #include "VideocoreFrameLowering.h"
 #include "VideocoreISelLowering.h"
 #include "VideocoreSelectionDAGInfo.h"
+#include "VideocoreSubtarget.h"
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetFrameLowering.h"
@@ -26,6 +27,7 @@ namespace llvm {
 
 class VideocoreTargetMachine : public LLVMTargetMachine {
   const DataLayout DL;       // Calculates type size & alignment
+  VideocoreSubtarget Subtarget;
   VideocoreInstrInfo InstrInfo;
   VideocoreTargetLowering TLInfo;
   VideocoreSelectionDAGInfo TSInfo;
@@ -49,6 +51,7 @@ public:
   virtual const VideocoreSelectionDAGInfo* getSelectionDAGInfo() const {
     return &TSInfo;
   }
+  virtual const VideocoreSubtarget   *getSubtargetImpl() const { return &Subtarget; }
   virtual const DataLayout       *getDataLayout() const { return &DL; }
 
   // Pass Pipeline Configuration
