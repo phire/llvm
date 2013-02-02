@@ -1,6 +1,9 @@
 add_llvm_library(LLVMVideocoreDesc
   VideocoreMCTargetDesc.cpp
   VideocoreMCAsmInfo.cpp
+  VideocoreMCCodeEmitter.cpp
+  VideocoreELFObjectWriter.cpp
+  VideocoreAsmBackend.cpp
   )
 
 add_dependencies(LLVMVideocoreDesc VideocoreCommonTableGen)

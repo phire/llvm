@@ -18,6 +18,7 @@
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/MC/MCSubtargetInfo.h"
+#include "llvm/MC/MCStreamer.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/TargetRegistry.h"
 
@@ -79,6 +80,18 @@ static MCInstPrinter *createVideocoreMCInstPrinter(const Target &T,
   return new VideocoreInstPrinter(MAI, MII, MRI);
 }
 
+static MCStreamer *createMCStreamer(const Target &T, StringRef TT,
+                                    MCContext &Ctx, MCAsmBackend &MAB,
+                                    raw_ostream &_OS,
+                                    MCCodeEmitter *_Emitter,
+                                    bool RelaxAll,
+                                    bool NoExecStack) {
+  Triple TheTriple(TT);
+
+  return createELFStreamer(Ctx, MAB, _OS, _Emitter, RelaxAll, NoExecStack);
+}
+
+
 // Force static initialization.
 extern "C" void LLVMInitializeVideocoreTargetMC() {
   // Register the MC asm info.
@@ -93,6 +106,16 @@ extern "C" void LLVMInitializeVideocoreTargetMC() {
 
   // Register the MC register info.
   TargetRegistry::RegisterMCRegInfo(TheVideocoreTarget, createVideocoreMCRegisterInfo);
+
+  // Register the MC code emitter
+  TargetRegistry::RegisterMCCodeEmitter(TheVideocoreTarget, createVideocoreMCCodeEmitter);
+
+  // Register the MC object streamer
+  TargetRegistry::RegisterMCObjectStreamer(TheVideocoreTarget, createMCStreamer);
+
+  // Register the asm backend.
+  TargetRegistry::RegisterMCAsmBackend(TheVideocoreTarget, createVideocoreAsmBackend);
+
 
   // Register the MC subtarget info.
   TargetRegistry::RegisterMCSubtargetInfo(TheVideocoreTarget,

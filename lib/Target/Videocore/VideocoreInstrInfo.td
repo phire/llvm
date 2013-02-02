@@ -178,7 +178,18 @@ def STHSqq : LDST16<3, 1,
                  [(truncstorei16 LowReg:$src, ADDRrr:$addr)]>;
 
 def STWrri : InstVC32<(outs), (ins IntReg:$src, MEMri:$addr), "st $src, $addr",
-        [(store IntReg:$src, ADDRri:$addr)]>;
+        [(store IntReg:$src, ADDRri:$addr)]> {
+    bits<5> Rd;
+    bits<5> Rs;
+    bits<12> offset;
+
+    let Inst{31-25} = 0x51;
+    let Inst{24} = offset{11};
+    let Inst{23-21} = 1;
+    let Inst{20-16} = Rd;
+    let Inst{15-11} = Rs;
+    let Inst{10-0} = offset{10-0};
+}
 
 //def MOVqq : ArithLogicQQ<0,
 //        (outs LowReg:$dst), (ins LowReg:$src), "mov $dst, $src",
