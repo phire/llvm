@@ -1,4 +1,4 @@
-//===-- VideocoreInstPrinter.cpp - Convert Cpu0 MCInst to assembly syntax -===//
+//===- VideocoreInstPrinter.cpp - Convert Videocore MCInst to asm syntax --===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This class prints an Cpu0 MCInst to a .s file.
+// This class prints an Videocore MCInst to a .s file.
 //
 //===----------------------------------------------------------------------===//
 
@@ -101,6 +101,19 @@ void VideocoreInstPrinter::printU5ImmOperand(const MCInst *MI, int OpNo,
     assert(Value <= 31 && "Invalid u5imm argument!");
     O << (unsigned int)Value;
 }
+
+void VideocoreInstPrinter::printS16ImmOperand(const MCInst *MI, int OpNo,
+                                               raw_ostream &O) {
+    unsigned int Value = MI->getOperand(OpNo).getImm();
+    O << (int)Value;
+}
+
+void VideocoreInstPrinter::printU32ImmOperand(const MCInst *MI, int OpNo,
+                                               raw_ostream &O) {
+    unsigned int Value = MI->getOperand(OpNo).getImm();
+    O << (unsigned int)Value;
+}
+
 
 void VideocoreInstPrinter::
 printMemOperand(const MCInst *MI, int opNum, raw_ostream &O) {

@@ -241,15 +241,23 @@ VideocoreInstrInfo::RemoveBranch(MachineBasicBlock &MBB) const {
   // Remove the branch.
   I->eraseFromParent();
   return 2;
-}
+} */
 
 void VideocoreInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                  MachineBasicBlock::iterator I, DebugLoc DL,
                                  unsigned DestReg, unsigned SrcReg,
                                  bool KillSrc) const {
-  llvm_unreachable("Impossible reg-to-reg copy");
-}
+  int opc;
+  if (VC::LowRegRegClass.contains(SrcReg) &&
+		VC::LowRegRegClass.contains(DestReg)) 
+	opc = VC::MOVqq;
+  else
+	opc = VC::MOVrr;
 
+  BuildMI(MBB, I, DL, get(opc)).addReg(DestReg).addReg(SrcReg);
+} 
+
+/*
 void VideocoreInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
                                          MachineBasicBlock::iterator I,
                                          unsigned SrcReg, bool isKill,

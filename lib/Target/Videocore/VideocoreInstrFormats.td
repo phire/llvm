@@ -66,8 +66,10 @@ class LEA16_sp<bit ld_st, dag outs, dag ins, string asmstr, list<dag> pattern>
   let Inst{4-0} = Rd;
 }
 
-class ArithLogicQQ<bits<5> op, dag outs, dag ins, string asmstr, list<dag> pattern>
-   : InstVC16<outs, ins, asmstr, pattern> {
+// Arithmetic and logic instruction formats
+
+class ArithLogicQQ<bits<5> op, dag ins, string asmstr, list<dag> pattern>
+   : InstVC16<(outs LowReg:$Rd), ins, asmstr, pattern> {
   bits<4> Rd;
   bits<4> Rs;
 
@@ -77,8 +79,8 @@ class ArithLogicQQ<bits<5> op, dag outs, dag ins, string asmstr, list<dag> patte
   let Inst{3-0} = Rd;
 }
 
-class ArithLogicRR<bits<5> op, dag outs, dag ins, string asmstr, list<dag> pattern>
-   : InstVC32<outs, ins, asmstr, pattern> {
+class ArithLogicRR<bits<5> op, dag ins, string asmstr, list<dag> pattern>
+   : InstVC32<(outs IntReg:$Rd), ins, asmstr, pattern> {
   bits<5> Rd;
   bits<5> Ra;
 
@@ -91,8 +93,8 @@ class ArithLogicRR<bits<5> op, dag outs, dag ins, string asmstr, list<dag> patte
   let Inst{4-0} = 0;
 }
 
-class ArithLogicRRR<bits<5> op, dag outs, dag ins, string asmstr, list<dag> pattern>
-   : InstVC32<outs, ins, asmstr, pattern> {
+class ArithLogicRRR<bits<5> op, dag ins, string asmstr, list<dag> pattern>
+   : InstVC32<(outs IntReg:$Rd), ins, asmstr, pattern> {
   bits<5> Rd;
   bits<5> Ra;
   bits<5> Rb;
@@ -106,16 +108,40 @@ class ArithLogicRRR<bits<5> op, dag outs, dag ins, string asmstr, list<dag> patt
   let Inst{4-0} = Rb;
 }
 
-class ArithLogicQI<bits<4> op, dag outs, dag ins, string asmstr, list<dag> pattern>
-   : InstVC16<outs, ins, asmstr, pattern> {
+class ArithLogicQI<bits<5> op, dag ins, string asmstr, list<dag> pattern>
+   : InstVC16<(outs LowReg:$Rd), ins, asmstr, pattern> {
   bits<4> Rd;
   bits<5> immU5;
 
   let Inst{15-13} = 3;
-  let Inst{12-9} = op;
+  let Inst{12-9} = op{4-1};
   let Inst{8-4} = immU5;
   let Inst{3-0} = Rd;
 }
+
+class ArithLogicRI<bits<5> op, dag ins, string asmstr, list<dag> pattern>
+   : InstVC32<(outs IntReg:$Rd), ins, asmstr, pattern> {
+  bits<5> Rd;
+  bits<16> imm; // Signed
+
+  let Inst{31-26} = 0b101100;
+  let Inst{25-21} = op;
+  let Inst{20-16} = Rd;
+  let Inst{15-0} = imm;
+}
+
+class ArithLogic48<bits<5> op, dag ins, string asmstr, list<dag> pattern>
+   : InstVC48<(outs IntReg:$Rd), ins, asmstr, pattern> {
+  bits<5> Rd;
+  bits<32> imm;
+
+  let Inst{47-42} = 0b111010;
+  let Inst{41-37} = op;
+  let Inst{36-32} = Rd;
+  let Inst{31-0} = imm;
+}
+
+
 
 
 
