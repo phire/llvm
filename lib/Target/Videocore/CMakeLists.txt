@@ -1,7 +1,7 @@
 set(LLVM_TARGET_DEFINITIONS Videocore.td)
 
 tablegen(LLVM VideocoreGenRegisterInfo.inc -gen-register-info)
-tablegen(LLVM VideocoreGenDisassemblerTables.inc -gen-disassembler)
+#tablegen(LLVM VideocoreGenDisassemblerTables.inc -gen-disassembler)
 tablegen(LLVM VideocoreGenInstrInfo.inc -gen-instr-info)
 tablegen(LLVM VideocoreGenAsmWriter.inc -gen-asm-writer)
 #tablegen(LLVM VideocoreGenAsmMatcher.inc -gen-asm-matcher)

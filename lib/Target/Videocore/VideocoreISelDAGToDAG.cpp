@@ -14,6 +14,7 @@
 #include "VideocoreTargetMachine.h"
 #include "llvm/CodeGen/SelectionDAGISel.h"
 #include "llvm/Support/Compiler.h"
+#include "llvm/Support/DataTypes.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
@@ -43,6 +44,12 @@ public:
   // Complex Pattern Selectors.
   bool SelectADDRrr(SDValue N, SDValue &R1, SDValue &R2);
   bool SelectADDRri(SDValue N, SDValue &Base, SDValue &Offset);
+
+  bool SelectBITi(SDValue N, SDValue &imm);
+  bool SelectNOTBITi(SDValue N, SDValue &imm);
+  bool SelectMASKi(SDValue N, SDValue &imm);
+  bool SelectNEGu5(SDValue N, SDValue &imm);
+
 
   /// SelectInlineAsmMemoryOperand - Implement addressing mode selection for
   /// inline asm expressions.
@@ -112,6 +119,65 @@ bool VideocoreDAGToDAGISel::SelectADDRrr(SDValue Addr, SDValue &R1, SDValue &R2)
   R2 = CurDAG->getRegister(VC::R0, MVT::i32);
   return true;
 }
+
+// Detect 32 bit constants that can be replaced with 1 << x
+bool VideocoreDAGToDAGISel::SelectBITi(SDValue N, SDValue &imm) {
+	if(ConstantSDNode *CN = dyn_cast<ConstantSDNode>(N)) {
+		uint32_t v = CN->getZExtValue();
+		// test if only one bit is set (aka, is a power of 2)
+		if(v && !(v & (v - 1))) {
+			int bit = 0x1f - __builtin_clz(v);
+			imm = CurDAG->getTargetConstant(bit, MVT::i32);
+			return true;
+		}
+	}
+	return false;
+}
+
+// Detect 32 bit constants that can be replaced with ~(1 << x)
+bool VideocoreDAGToDAGISel::SelectNOTBITi(SDValue N, SDValue &imm) {
+	if(ConstantSDNode *CN = dyn_cast<ConstantSDNode>(N)) {
+		uint32_t v = CN->getZExtValue();
+		v = ~v;
+		// test if only one bit is set (aka, is a power of 2)
+		if(v && !(v & (v - 1))) {
+			int bit = 0x1f - __builtin_clz(v);
+			imm = CurDAG->getTargetConstant(bit, MVT::i32);
+			return true;
+		}
+	}
+	return false;
+}
+
+// Detect 32 bit constants that can be replaced with (1 << x) -1
+bool VideocoreDAGToDAGISel::SelectMASKi(SDValue N, SDValue &imm) {
+	if(ConstantSDNode *CN = dyn_cast<ConstantSDNode>(N)) {
+		uint32_t v = CN->getZExtValue();
+		if(v == 0) return false; // clz is undefined for zero
+		int topbit = 0x20 - __builtin_clz(v);
+		// test if all bits below topbit are set
+		if(v == (unsigned)(1 << topbit) - 1) {
+			imm = CurDAG->getTargetConstant(topbit, MVT::i32);
+			return true;
+		}
+	}
+	return false;
+}
+
+// Match small negitave constants that 
+bool VideocoreDAGToDAGISel::SelectNEGu5(SDValue N, SDValue &imm) {
+	if(ConstantSDNode *CN = dyn_cast<ConstantSDNode>(N)) {
+		int v = CN->getSExtValue();
+		if(v < 0 && v > -32) {
+			imm = CurDAG->getTargetConstant(abs(v), MVT::i32);
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
 
 SDNode *VideocoreDAGToDAGISel::Select(SDNode *N) {
   //DebugLoc dl = N->getDebugLoc();
