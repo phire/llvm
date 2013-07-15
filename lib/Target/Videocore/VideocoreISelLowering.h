@@ -32,6 +32,7 @@ namespace llvm {
     virtual SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const;
 
   private:
+	SDValue LowerBRCOND(SDValue Op, SelectionDAG &DAG) const;
 
     //- must be exist without function all
     virtual SDValue

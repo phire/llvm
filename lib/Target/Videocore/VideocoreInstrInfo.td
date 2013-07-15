@@ -225,6 +225,74 @@ def ADJCALLSTACKUP : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2),
 // Instructions
 //===----------------------------------------------------------------------===//
 
+def B32 : InstVC32<(outs), (ins brtarget:$imm24), 
+		"b $imm24", [(br bb:$imm24)]> {
+	bits<24> imm24;
+
+	let Inst{31-28} = 9;
+	let Inst{27-24} = 0xe;
+	let Inst{23} = 0;
+	let Inst{22-0} = imm24{23-1};
+
+	let isBranch=1;
+	let isTerminator=1;
+	let isBarrier=1;
+	let hasDelaySlot=0;
+}
+
+class branch32 <bits<4> cond, string cc> : InstVC32<(outs), 
+		(ins IntReg:$flags, brtarget:$imm24), 
+		!strconcat("b", !strconcat(cc, " $imm24")), [(brcond IntReg:$flags, bb:$imm24)]> {
+	bits<24> imm24;
+
+	let Inst{31-28} = 9;
+	let Inst{27-24} = cond;
+	let Inst{23} = 0;
+	let Inst{22-0} = imm24{23-1};
+
+	let isBranch=1;
+	let isTerminator=1;
+	let hasDelaySlot=0;
+}
+
+
+def BEQ_32 : branch32<0x0, "eq">;
+def BNE_32 : branch32<0x1, "ne">;
+def BGE_32 : branch32<0xa, "ge">;
+def BLT_32 : branch32<0xb, "lt">;
+def BGT_32 : branch32<0xc, "gt">;
+def BLE_32 : branch32<0xd, "le">;
+
+
+def CMPrr : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, IntReg:$Rb), "cmp $Rd, $Ra, $Rb",
+	[]> {
+	bits<5> Ra;
+	bits<5> Rb;
+
+	let Inst{31-26} = 0b110000;
+	let Inst{25-21} = 1;
+	let Inst{15-11} = Ra;
+	let Inst{10-7} = 0xe;
+	let Inst{4-0} = Rb;
+	let isCommutable=1;
+}
+
+def CMPri : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, immU5opnd:$imm), "cmp $Rd, $Ra, $imm",
+	[]> {
+	bits<5> Ra;
+	bits<5> Rb;
+	bits<5> imm;
+
+	let Inst{31-26} = 0b110000;
+	let Inst{25-21} = 1;
+	let Inst{15-11} = Ra;
+	let Inst{10-7} = 0xe;
+	let Inst{6-5} = 2;
+	let Inst{4-0} = imm;
+	let isCommutable=1;
+}
+
+
 /*
 def LDWqq  : LDST16<0, 0, 
 		(outs LowReg:$dst), (ins MEMq:$addr), "ld $dst, $addr",
@@ -456,4 +524,34 @@ let isReturn=1, isTerminator=1, isCodeGenOnly=1,
 // Non-Instruction Patterns
 //===----------------------------------------------------------------------===//
 
+def : Pat<(brcond (seteq IntReg:$lhs, IntReg:$rhs), bb:$dst),
+          (BEQ_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
 
+def : Pat<(brcond (setne IntReg:$lhs, IntReg:$rhs), bb:$dst),
+          (BNE_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
+
+def : Pat<(brcond (seteq IntReg:$lhs, immU5:$rhs), bb:$dst),
+          (BEQ_32 (CMPri IntReg:$lhs, immU5:$rhs), bb:$dst)>;
+
+def : Pat<(brcond (setne IntReg:$lhs, immU5:$rhs), bb:$dst),
+          (BNE_32 (CMPri IntReg:$lhs, immU5:$rhs), bb:$dst)>; 
+
+def : Pat<(brcond (setlt IntReg:$lhs, IntReg:$rhs), bb:$dst),
+          (BLT_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
+
+def : Pat<(brcond (setgt IntReg:$lhs, IntReg:$rhs), bb:$dst),
+          (BGT_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
+
+
+def : Pat<(brcond (setge IntReg:$lhs, IntReg:$rhs), bb:$dst),
+          (BGE_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
+
+
+def : Pat<(brcond (setle IntReg:$lhs, IntReg:$rhs), bb:$dst),
+          (BLE_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
+
+
+
+
+def : Pat<(brcond IntReg:$cond, bb:$dst),
+		  (BNE_32 (CMPri IntReg:$cond, 0), bb:$dst)>;

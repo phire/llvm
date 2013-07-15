@@ -15,6 +15,9 @@
 
 using namespace llvm;
 
+void VideocoreAsmPrinter::EmitFunctionBodyStart() {
+  MCInstLowering.Initialize(Mang, &MF->getContext());
+}
 
 void VideocoreAsmPrinter::EmitInstruction(const MachineInstr *MI) {
     if (MI->isDebugValue()) {
