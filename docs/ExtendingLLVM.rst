@@ -1,5 +1,3 @@
-.. _extending_llvm:
-
 ============================================================
 Extending LLVM: Adding instructions, intrinsics, types, etc.
 ============================================================
@@ -47,7 +45,7 @@ function and then be turned into an instruction if warranted.
    what the restrictions are.  Talk to other people about it so that you are
    sure it's a good idea.
 
-#. ``llvm/include/llvm/Intrinsics*.td``:
+#. ``llvm/include/llvm/IR/Intrinsics*.td``:
 
    Add an entry for your intrinsic.  Describe its memory access characteristics
    for optimization (this controls whether it will be DCE'd, CSE'd, etc). Note

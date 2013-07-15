@@ -1,41 +1,84 @@
-;; RUN: llc -mtriple=powerpc64-unknown-linux-gnu -filetype=obj %s -o - | \
-;; RUN: elf-dump --dump-section-data | FileCheck %s
+; RUN: llc -mtriple=powerpc64-unknown-linux-gnu -filetype=obj -relocation-model=static %s -o - | \
+; RUN: llvm-readobj -s -sr -sd | FileCheck %s -check-prefix=STATIC
+; RUN: llc -mtriple=powerpc64-unknown-linux-gnu -filetype=obj -relocation-model=pic %s -o - | \
+; RUN: llvm-readobj -s -sr -sd | FileCheck %s -check-prefix=PIC
 
-;; FIXME: this file should be in .s form, change when asm parser is available.
+; FIXME: this file should be in .s form, change when asm parser is available.
 
 define void @f() {
 entry:
   ret void
 }
 
-;; CHECK:      ('sh_name', 0x{{.*}}) # '.eh_frame'
-;; CHECK-NEXT: ('sh_type', 0x00000001)
-;; CHECK-NEXT: ('sh_flags', 0x0000000000000002)
-;; CHECK-NEXT: ('sh_addr', 0x{{.*}})
-;; CHECK-NEXT: ('sh_offset', 0x{{.*}})
-;; CHECK-NEXT: ('sh_size', 0x0000000000000030)
-;; CHECK-NEXT: ('sh_link', 0x00000000)
-;; CHECK-NEXT: ('sh_info', 0x00000000)
-;; CHECK-NEXT: ('sh_addralign', 0x0000000000000008)
-;; CHECK-NEXT: ('sh_entsize', 0x0000000000000000)
-;; CHECK-NEXT: ('_section_data', '00000010 00000000 017a5200 01784101 000c0100 00000018 00000018 00000000 00000000 00000000 00000010 00000000')
+; STATIC:      Section {
+; STATIC:        Name: .eh_frame
+; STATIC-NEXT:   Type: SHT_PROGBITS
+; STATIC-NEXT:   Flags [ (0x2)
+; STATIC-NEXT:     SHF_ALLOC
+; STATIC-NEXT:   ]
+; STATIC-NEXT:   Address:
+; STATIC-NEXT:   Offset:
+; STATIC-NEXT:   Size: 40
+; STATIC-NEXT:   Link: 0
+; STATIC-NEXT:   Info: 0
+; STATIC-NEXT:   AddressAlignment: 8
+; STATIC-NEXT:   EntrySize: 
+; STATIC-NEXT:   Relocations [
+; STATIC-NEXT:     0x1C R_PPC64_REL32 .text 0x0
+; STATIC-NEXT:   ]
+; STATIC-NEXT:   SectionData (
+; STATIC-NEXT:     0000: 00000010 00000000 017A5200 01784101
+; STATIC-NEXT:     0010: 1B0C0100 00000010 00000018 00000000
+; STATIC-NEXT:     0020: 00000010 00000000
+; STATIC-NEXT:   )
+; STATIC-NEXT: }
 
-;; CHECK:      ('sh_name', 0x{{.*}}) # '.rela.eh_frame'
-;; CHECK-NEXT: ('sh_type', 0x00000004)
-;; CHECK-NEXT: ('sh_flags', 0x0000000000000000)
-;; CHECK-NEXT: ('sh_addr', 0x{{.*}})
-;; CHECK-NEXT: ('sh_offset', 0x{{.*}})
-;; CHECK-NEXT: ('sh_size', 0x0000000000000018)
-;; CHECK-NEXT: ('sh_link', 0x{{.*}})
-;; CHECK-NEXT: ('sh_info', 0x{{.*}})
-;; CHECK-NEXT: ('sh_addralign', 0x0000000000000008)
-;; CHECK-NEXT: ('sh_entsize', 0x0000000000000018)
-;; CHECK-NEXT: ('_relocations', [
-;; CHECK-NEXT:  # Relocation 0
-;; CHECK-NEXT:  (('r_offset', 0x000000000000001c)
-;; CHECK-NEXT:   ('r_sym', 0x{{.*}})
-;; CHECK-NEXT:   ('r_type', 0x00000026)
-;; CHECK-NEXT:   ('r_addend', 0x0000000000000000)
-;; CHECK-NEXT:  ),
-;; CHECK-NEXT: ])
+; STATIC:      Section {
+; STATIC:        Name: .rela.eh_frame
+; STATIC-NEXT:   Type: SHT_RELA
+; STATIC-NEXT:   Flags [ (0x0)
+; STATIC-NEXT:   ]
+; STATIC-NEXT:   Address:
+; STATIC-NEXT:   Offset:
+; STATIC-NEXT:   Size: 24
+; STATIC-NEXT:   Link:
+; STATIC-NEXT:   Info:
+; STATIC-NEXT:   AddressAlignment: 8
+; STATIC-NEXT:   EntrySize: 24
 
+
+; PIC:      Section {
+; PIC:        Name: .eh_frame
+; PIC-NEXT:   Type: SHT_PROGBITS
+; PIC-NEXT:   Flags [ (0x2)
+; PIC-NEXT:     SHF_ALLOC
+; PIC-NEXT:   ]
+; PIC-NEXT:   Address:
+; PIC-NEXT:   Offset:
+; PIC-NEXT:   Size: 40
+; PIC-NEXT:   Link: 0
+; PIC-NEXT:   Info: 0
+; PIC-NEXT:   AddressAlignment: 8
+; PIC-NEXT:   EntrySize: 0
+; PIC-NEXT:   Relocations [
+; PIC-NEXT:     0x1C R_PPC64_REL32 .text 0x0
+; PIC-NEXT:   ]
+; PIC-NEXT:   SectionData (
+; PIC-NEXT:     0000: 00000010 00000000 017A5200 01784101
+; PIC-NEXT:     0010: 1B0C0100 00000010 00000018 00000000
+; PIC-NEXT:     0020: 00000010 00000000
+; PIC-NEXT:   )
+; PIC-NEXT: }
+
+; PIC:      Section {
+; PIC:        Name: .rela.eh_frame
+; PIC-NEXT:   Type: SHT_RELA
+; PIC-NEXT:   Flags [ (0x0)
+; PIC-NEXT:   ]
+; PIC-NEXT:   Address:
+; PIC-NEXT:   Offset:
+; PIC-NEXT:   Size: 24
+; PIC-NEXT:   Link:
+; PIC-NEXT:   Info:
+; PIC-NEXT:   AddressAlignment: 8
+; PIC-NEXT:   EntrySize: 24
