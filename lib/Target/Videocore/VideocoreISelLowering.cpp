@@ -65,6 +65,12 @@ VideocoreTargetLowering::VideocoreTargetLowering(TargetMachine &TM)
   // No debug info support yet.
   setOperationAction(ISD::EH_LABEL, MVT::Other, Expand);
 
+  AddPromotedToType(ISD::SETCC, MVT::i1, MVT::i32);
+  setOperationAction(ISD::BRCOND,             MVT::Other, Custom);
+
+  // Videocore doesn't support this
+  setOperationAction(ISD::BR_CC,             MVT::Other, Expand);
+
   setStackPointerRegisterToSaveRestore(VC::SP);
 
   setMinFunctionAlignment(2);
@@ -77,7 +83,13 @@ SDValue VideocoreTargetLowering::
 LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
   default: llvm_unreachable("Should not custom lower this!");
+	case ISD::BRCOND:	return LowerBRCOND(Op, DAG);
   }
+}
+
+SDValue VideocoreTargetLowering::
+LowerBRCOND(SDValue Op, SelectionDAG &DAG) const {
+  return Op;
 }
 
 /// LowerFormalArguments - transform physical registers into virtual registers

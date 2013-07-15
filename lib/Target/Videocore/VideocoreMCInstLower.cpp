@@ -15,7 +15,7 @@
 #include "VideocoreMCInstLower.h"
 #include "VideocoreAsmPrinter.h"
 #include "VideocoreInstrInfo.h"
-//#include "MCTargetDesc/VideocoreBaseInfo.h"
+#include "MCTargetDesc/VideocoreBaseInfo.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineOperand.h"
@@ -37,14 +37,21 @@ void VideocoreMCInstLower::Initialize(Mangler *M, MCContext* C) {
 MCOperand VideocoreMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
                                               MachineOperandType MOTy,
                                               unsigned Offset) const {
+  assert(Ctx != NULL);
+
   MCSymbolRefExpr::VariantKind Kind;
   const MCSymbol *Symbol;
 
   switch(MO.getTargetFlags()) {
   default:                   llvm_unreachable("Invalid target flag!");
+    case VideocoreII::MO_NO_FLAG: Kind = MCSymbolRefExpr::VK_None; break;
   }
 
   switch (MOTy) {
+  case MachineOperand::MO_MachineBasicBlock:
+    Symbol = MO.getMBB()->getSymbol();
+    break;
+
   case MachineOperand::MO_GlobalAddress:
     Symbol = Mang->getSymbol(MO.getGlobal());
     break;
@@ -80,6 +87,10 @@ MCOperand VideocoreMCInstLower::LowerOperand(const MachineOperand& MO,
     return MCOperand::CreateImm(MO.getImm() + offset);
   case MachineOperand::MO_RegisterMask:
     break;
+  case MachineOperand::MO_MachineBasicBlock:
+  case MachineOperand::MO_GlobalAddress:
+  case MachineOperand::MO_BlockAddress:
+    return LowerSymbolOperand(MO, MOTy, offset);
  }
 
   return MCOperand();

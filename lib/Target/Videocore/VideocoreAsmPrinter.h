@@ -36,6 +36,7 @@ namespace llvm {
         }
 
         void EmitInstruction(const MachineInstr *MI);
+        virtual void EmitFunctionBodyStart();
 
     protected:
         void PrintDebugValueComment(const MachineInstr *MI, raw_ostream &OS);
