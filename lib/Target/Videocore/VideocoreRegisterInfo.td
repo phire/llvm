@@ -55,3 +55,12 @@ def FloatReg : RegisterClass<"VC", [f32], 32,
                                  R14, R15, R16, R17, R18, R19, R20,
                                  R21, R22, R23, R24, R27, R28, R29)>;
 
+// Flags register
+def NZCV : Register<"nzcv"> {
+  let Namespace = "VC";
+}
+
+def FlagClass : RegisterClass<"VC", [i32], 32, (add NZCV)> {
+  let CopyCost = -1;
+  let isAllocatable = 0;
+}

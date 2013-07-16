@@ -13,6 +13,7 @@
 
 #define DEBUG_TYPE "asm-printer"
 #include "VideocoreInstPrinter.h"
+#include "MCTargetDesc/VideocoreBaseInfo.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
@@ -121,4 +122,11 @@ printMemOperand(const MCInst *MI, int opNum, raw_ostream &O) {
   O << "(";
   printOperand(MI, opNum, O);
   O << ")";
+}
+
+void VideocoreInstPrinter::
+printCondCodeOperand(const MCInst *MI, int opNum, raw_ostream &O) {
+  const MCOperand &MO = MI->getOperand(opNum);
+
+  O << VCCondCodeToString(static_cast<VCCC::CondCodes>(MO.getImm()));
 }

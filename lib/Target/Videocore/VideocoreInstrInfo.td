@@ -25,8 +25,37 @@ def callseq_start : SDNode<"ISD::CALLSEQ_START", SDT_VCCallSeqStart,
 def callseq_end   : SDNode<"ISD::CALLSEQ_END",   SDT_VCCallSeqEnd,
                            [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
 
-def retflag       : SDNode<"VideocoreISD::RET_FLAG", SDTNone,
+def retflag       : SDNode<"VCISD::RET_FLAG", SDTNone,
                                [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
+
+// (ins NZCV, Condition, Dest)
+def SDT_VCbr_cc : SDTypeProfile<0, 3, [SDTCisVT<0, i32>]>;
+def VCbr_cc : SDNode<"VCISD::BR_CC", SDT_VCbr_cc, [SDNPHasChain]>;
+
+// (outs NZCV), (ins LHS, RHS, Condition)
+def SDT_VCsetcc : SDTypeProfile<1, 3, [SDTCisVT<0, i32>,
+                                        SDTCisSameAs<1, 2>]>;
+def VCsetcc : SDNode<"VCISD::SETCC", SDT_VCsetcc>;
+
+def VCcmp : PatFrag<(ops node:$lhs, node:$rhs),
+                    (VCsetcc node:$lhs, node:$rhs, cond)>;
+
+// When matching a notional (CMP op1, (sub 0, op2)), we'd like to use a CMN
+// instruction on the grounds that "op1 - (-op2) == op1 + op2". However, the C
+// and V flags can be set differently by this operation. It comes down to
+// whether "SInt(~op2)+1 == SInt(~op2+1)" (and the same for UInt). If they are
+// then everything is fine. If not then the optimization is wrong. Thus general
+// comparisons are only valid if op2 != 0.
+
+// So, finally, the only LLVM-native comparisons that don't mention C and V are
+// SETEQ and SETNE. They're the only ones we can safely use CMN for in the
+// absence of information about op2.
+def equality_cond : PatLeaf<(cond), [{
+  return N->get() == ISD::SETEQ || N->get() == ISD::SETNE;
+}]>;
+
+def VCcmn : PatFrag<(ops node:$lhs, node:$rhs),
+                     (VCsetcc node:$lhs, (sub 0, node:$rhs), equality_cond)>;
 
 //===----------------------------------------------------------------------===//
 // Instruction Pattern Stuff
@@ -78,6 +107,18 @@ def immU32 : PatLeaf<(imm), [{ return isInt<32>(N->getZExtValue()); }]>;
 
 def immU32opnd : Operand<i32> {
       let PrintMethod = "printU32ImmOperand";
+}
+
+def cond_code_asmoperand : AsmOperandClass {
+  let Name = "CondCode";
+  let DiagnosticType = "CondCode";
+}
+
+def cond_code : Operand<i32>, ImmLeaf<i32, [{
+  return Imm >= 0 && Imm <= 15;
+}]> {
+  let PrintMethod = "printCondCodeOperand";
+  let ParserMatchClass = cond_code_asmoperand;
 }
 
 // Instruction operand types
@@ -240,56 +281,74 @@ def B32 : InstVC32<(outs), (ins brtarget:$imm24),
 	let hasDelaySlot=0;
 }
 
-class branch32 <bits<4> cond, string cc> : InstVC32<(outs), 
-		(ins IntReg:$flags, brtarget:$imm24), 
-		!strconcat("b", !strconcat(cc, " $imm24")), [(brcond IntReg:$flags, bb:$imm24)]> {
+def bcc : InstVC32<(outs), 
+		(ins cond_code:$Cond, brtarget:$imm24), 
+		"b$Cond $imm24", [(VCbr_cc NZCV, (i32 imm:$Cond), bb:$imm24)]> {
 	bits<24> imm24;
+    bits<4> Cond;
 
 	let Inst{31-28} = 9;
-	let Inst{27-24} = cond;
+	let Inst{27-24} = Cond;
 	let Inst{23} = 0;
 	let Inst{22-0} = imm24{23-1};
 
+	let Uses = [NZCV];
 	let isBranch=1;
 	let isTerminator=1;
 	let hasDelaySlot=0;
 }
 
 
-def BEQ_32 : branch32<0x0, "eq">;
-def BNE_32 : branch32<0x1, "ne">;
-def BGE_32 : branch32<0xa, "ge">;
-def BLT_32 : branch32<0xb, "lt">;
-def BGT_32 : branch32<0xc, "gt">;
-def BLE_32 : branch32<0xd, "le">;
+def CMPqq : InstVC16<(outs), (ins LowReg:$Ra, LowReg:$Rb), "cmp $Ra, $Rb",
+	[(set NZCV, (VCcmp LowReg:$Ra, LowReg:$Rb))]> {
+	bits<4> Ra;
+	bits<4> Rb;
+
+	let Inst{15-13} = 2;
+	let Inst{12-8} = 0xa;
+	let Inst{7-4} = Rb;
+	let Inst{3-0} = Ra;
+	let isCommutable=1;
+    let Defs = [NZCV];
+}
+
+def CMPqi : InstVC16<(outs), (ins LowReg:$Ra, immU5opnd:$imm), "cmp $Ra, $imm",
+	[(set NZCV, (VCcmp LowReg:$Ra, immU5:$imm))]> {
+	bits<4> Ra;
+	bits<5> imm;
+
+	let Inst{15-13} = 3;
+	let Inst{12-9} = 0x5;
+	let Inst{8-4} = imm;
+	let Inst{3-0} = Ra;
+    let Defs = [NZCV];
+}
 
 
-def CMPrr : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, IntReg:$Rb), "cmp $Rd, $Ra, $Rb",
-	[]> {
+def CMPrr : InstVC32<(outs), (ins IntReg:$Ra, IntReg:$Rb), "cmp $Ra, $Rb",
+	[(set NZCV, (VCcmp IntReg:$Ra, IntReg:$Rb))]> {
 	bits<5> Ra;
 	bits<5> Rb;
 
 	let Inst{31-26} = 0b110000;
-	let Inst{25-21} = 1;
+	let Inst{25-21} = 0xa;
 	let Inst{15-11} = Ra;
 	let Inst{10-7} = 0xe;
 	let Inst{4-0} = Rb;
 	let isCommutable=1;
+    let Defs = [NZCV];
 }
 
-def CMPri : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, immU5opnd:$imm), "cmp $Rd, $Ra, $imm",
-	[]> {
+def CMPri : InstVC32<(outs), (ins IntReg:$Ra, immS16opnd:$imm), "cmp $Ra, $imm",
+	[(set NZCV, (VCcmp IntReg:$Ra, immS16:$imm))]> {
 	bits<5> Ra;
-	bits<5> Rb;
-	bits<5> imm;
+	bits<16> imm;
 
-	let Inst{31-26} = 0b110000;
-	let Inst{25-21} = 1;
-	let Inst{15-11} = Ra;
-	let Inst{10-7} = 0xe;
-	let Inst{6-5} = 2;
-	let Inst{4-0} = imm;
-	let isCommutable=1;
+	let Inst{31-26} = 0b101100;
+	let Inst{25-21} = 0xa;
+	let Inst{20-16} = Ra;
+	let Inst{15-0} = imm;
+	let Defs = [NZCV];
 }
 
 
@@ -524,34 +583,3 @@ let isReturn=1, isTerminator=1, isCodeGenOnly=1,
 // Non-Instruction Patterns
 //===----------------------------------------------------------------------===//
 
-def : Pat<(brcond (seteq IntReg:$lhs, IntReg:$rhs), bb:$dst),
-          (BEQ_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
-
-def : Pat<(brcond (setne IntReg:$lhs, IntReg:$rhs), bb:$dst),
-          (BNE_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
-
-def : Pat<(brcond (seteq IntReg:$lhs, immU5:$rhs), bb:$dst),
-          (BEQ_32 (CMPri IntReg:$lhs, immU5:$rhs), bb:$dst)>;
-
-def : Pat<(brcond (setne IntReg:$lhs, immU5:$rhs), bb:$dst),
-          (BNE_32 (CMPri IntReg:$lhs, immU5:$rhs), bb:$dst)>; 
-
-def : Pat<(brcond (setlt IntReg:$lhs, IntReg:$rhs), bb:$dst),
-          (BLT_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
-
-def : Pat<(brcond (setgt IntReg:$lhs, IntReg:$rhs), bb:$dst),
-          (BGT_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
-
-
-def : Pat<(brcond (setge IntReg:$lhs, IntReg:$rhs), bb:$dst),
-          (BGE_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
-
-
-def : Pat<(brcond (setle IntReg:$lhs, IntReg:$rhs), bb:$dst),
-          (BLE_32 (CMPrr IntReg:$lhs, IntReg:$rhs), bb:$dst)>;
-
-
-
-
-def : Pat<(brcond IntReg:$cond, bb:$dst),
-		  (BNE_32 (CMPri IntReg:$cond, 0), bb:$dst)>;

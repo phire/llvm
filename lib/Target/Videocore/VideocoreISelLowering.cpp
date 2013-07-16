@@ -46,8 +46,11 @@ VideocoreTargetLowering::VideocoreTargetLowering(TargetMachine &TM)
 
   // Turn FP extload into load/fextend
   setLoadExtAction(ISD::EXTLOAD, MVT::f32, Expand);
-  // Videocore doesn't have i1 sign extending load
+  // Videocore doesn't have i1 loads
   setLoadExtAction(ISD::SEXTLOAD, MVT::i1, Promote);
+  setLoadExtAction(ISD::ZEXTLOAD, MVT::i1, Promote);
+  setLoadExtAction(ISD::EXTLOAD, MVT::i1, Promote);
+
   // Turn FP truncstore into trunc + store.
   setTruncStoreAction(MVT::f64, MVT::f32, Expand);
 
@@ -65,11 +68,22 @@ VideocoreTargetLowering::VideocoreTargetLowering(TargetMachine &TM)
   // No debug info support yet.
   setOperationAction(ISD::EH_LABEL, MVT::Other, Expand);
 
-  AddPromotedToType(ISD::SETCC, MVT::i1, MVT::i32);
-  setOperationAction(ISD::BRCOND,             MVT::Other, Custom);
+  // VC instructions have the comparison predicate attached to the user of the
+  // result, but having a separate comparison is valuable for matching.
+  setOperationAction(ISD::BR_CC, MVT::i32, Custom);
+  setOperationAction(ISD::BR_CC, MVT::f32, Custom);
 
-  // Videocore doesn't support this
-  setOperationAction(ISD::BR_CC,             MVT::Other, Expand);
+  setOperationAction(ISD::SELECT, MVT::i32, Custom);
+  setOperationAction(ISD::SELECT, MVT::f32, Custom);
+  
+  setOperationAction(ISD::SELECT_CC, MVT::i32, Custom);
+  setOperationAction(ISD::SELECT_CC, MVT::f32, Custom);
+
+  setOperationAction(ISD::BRCOND, MVT::Other, Custom);
+
+  setOperationAction(ISD::SETCC, MVT::i32, Custom);
+  setOperationAction(ISD::SETCC, MVT::f32, Custom);
+
 
   setStackPointerRegisterToSaveRestore(VC::SP);
 
@@ -83,14 +97,75 @@ SDValue VideocoreTargetLowering::
 LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
   default: llvm_unreachable("Should not custom lower this!");
-	case ISD::BRCOND:	return LowerBRCOND(Op, DAG);
+    case ISD::BRCOND: return LowerBRCOND(Op, DAG);
+    case ISD::BR_CC: return LowerBR_CC(Op, DAG);
+    case ISD::SELECT: return LowerSELECT(Op, DAG);
+    case ISD::SELECT_CC: return LowerSELECT_CC(Op, DAG);
+    case ISD::SETCC: return LowerSETCC(Op, DAG);
   }
 }
 
+static VCCC::CondCodes getVCCC(ISD::CondCode CC) {
+  switch (CC) {
+  case ISD::SETEQ:  return VCCC::EQ;
+  case ISD::SETGT:  return VCCC::GT;
+  case ISD::SETGE:  return VCCC::GE;
+  case ISD::SETLT:  return VCCC::LT;
+  case ISD::SETLE:  return VCCC::LE;
+  case ISD::SETNE:  return VCCC::NE;
+  case ISD::SETUGT: return VCCC::HI;
+  case ISD::SETUGE: return VCCC::HS;
+  case ISD::SETULT: return VCCC::LO;
+  case ISD::SETULE: return VCCC::LS;
+  default: llvm_unreachable("Unexpected condition code");
+  }
+}
+
+
 SDValue VideocoreTargetLowering::
 LowerBRCOND(SDValue Op, SelectionDAG &DAG) const {
+  llvm_unreachable("LowerBRCOND");
   return Op;
 }
+
+// (BR_CC chain, condcode, lhs, rhs, dest)
+SDValue VideocoreTargetLowering::
+LowerBR_CC(SDValue Op, SelectionDAG &DAG) const {
+  DebugLoc dl = Op.getDebugLoc();
+  SDValue Chain = Op.getOperand(0);
+  ISD::CondCode CC = cast<CondCodeSDNode>(Op.getOperand(1))->get();
+  SDValue LHS = Op.getOperand(2);
+  SDValue RHS = Op.getOperand(3);
+  SDValue DestBB = Op.getOperand(4);
+
+  SDValue VCcc = DAG.getConstant(getVCCC(CC), MVT::i32);
+  SDValue SetCC = DAG.getNode(VCISD::SETCC, dl, MVT::i32, LHS, RHS,
+                              DAG.getCondCode(CC));
+  SDValue VCBR_CC = DAG.getNode(VCISD::BR_CC, dl, MVT::Other,
+                                Chain, SetCC, VCcc, DestBB);
+
+  return VCBR_CC;
+}
+
+SDValue VideocoreTargetLowering::
+LowerSELECT(SDValue Op, SelectionDAG &DAG) const {
+  llvm_unreachable("LowerSELECT");
+  return Op;
+}
+
+SDValue VideocoreTargetLowering::
+LowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const {
+  llvm_unreachable("LowerSELECT_CC");
+  return Op;
+}
+
+SDValue VideocoreTargetLowering::
+LowerSETCC(SDValue Op, SelectionDAG &DAG) const {
+  llvm_unreachable("LowerSETCC");
+  return Op;
+}
+
+
 
 /// LowerFormalArguments - transform physical registers into virtual registers
 /// and generate load operations for arguments places on the stack.
@@ -121,10 +196,10 @@ VideocoreTargetLowering::LowerReturn(SDValue Chain,
 
     // If this is the first return lowered for this function, add the regs to the
     // liveout set for the function.
-    if (DAG.getMachineFunction().getRegInfo().liveout_empty()) {
-        for (unsigned i = 0; i != RVLocs.size(); ++i)
-        DAG.getMachineFunction().getRegInfo().addLiveOut(RVLocs[i].getLocReg());
-    }
+    //if (DAG.getMachineFunction().getRegInfo().liveout_empty()) {
+    //    for (unsigned i = 0; i != RVLocs.size(); ++i)
+    //    DAG.getMachineFunction().getRegInfo().addLiveOut(RVLocs[i].getLocReg());
+    //}
 
     SDValue Flag;
 
@@ -154,8 +229,8 @@ VideocoreTargetLowering::LowerReturn(SDValue Chain,
     }
 
     if (Flag.getNode())
-        return DAG.getNode(VideocoreISD::RET_FLAG, dl, MVT::Other, Chain, Flag);
+        return DAG.getNode(VCISD::RET_FLAG, dl, MVT::Other, Chain, Flag);
     else
-        return DAG.getNode(VideocoreISD::RET_FLAG, dl, MVT::Other, Chain);
+        return DAG.getNode(VCISD::RET_FLAG, dl, MVT::Other, Chain);
 }
 

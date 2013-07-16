@@ -16,12 +16,16 @@
 #define VIDEOCORE_ISELLOWERING_H
 
 #include "Videocore.h"
+#include "MCTargetDesc/VideocoreBaseInfo.h"
 #include "llvm/Target/TargetLowering.h"
 
 namespace llvm {
-  namespace VideocoreISD {
+  namespace VCISD {
     enum {
       FIRST_NUMBER = ISD::BUILTIN_OP_END,
+      BR_CC,
+      SELECT_CC,
+      SETCC,
       RET_FLAG
     };
   }
@@ -33,6 +37,10 @@ namespace llvm {
 
   private:
 	SDValue LowerBRCOND(SDValue Op, SelectionDAG &DAG) const;
+	SDValue LowerBR_CC(SDValue Op, SelectionDAG &DAG) const;
+	SDValue LowerSELECT(SDValue Op, SelectionDAG &DAG) const;
+	SDValue LowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const;
+	SDValue LowerSETCC(SDValue Op, SelectionDAG &DAG) const;
 
     //- must be exist without function all
     virtual SDValue
