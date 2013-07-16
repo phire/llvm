@@ -22,6 +22,59 @@
 
 namespace llvm {
 
+// Enums corresponding to Videocore condition codes
+namespace VCCC {
+  // The CondCodes constants map directly to the 4-bit encoding of the
+  // condition field for predicated instructions.
+  // Almost the same as ARM condition codes, but LO and HS are swapped.
+  // FIXME: floating point meaning untested on arm.
+  enum CondCodes { // Meaning (integer)          Meaning (floating-point)
+    EQ,            // Equal                      Equal
+    NE,            // Not equal                  Not equal, or unordered
+    LO,            // Carry set                  >, ==, or unordered
+    HS,            // Carry clear                Less than
+    MI,            // Minus, negative            Less than
+    PL,            // Plus, positive or zero     >, ==, or unordered
+    VS,            // Overflow                   Unordered
+    VC,            // No overflow                Not unordered
+    HI,            // Unsigned higher            Greater than, or unordered
+    LS,            // Unsigned lower or same     Less than or equal
+    GE,            // Greater than or equal      Greater than or equal
+    LT,            // Less than                  Less than, or unordered
+    GT,            // Greater than               Greater than
+    LE,            // Less than or equal         <, ==, or unordered
+    AL             // Always (unconditional)     Always (unconditional)
+  };
+
+  inline static CondCodes getOppositeCondition(CondCodes CC) {
+  // It turns out that the condition codes have been designed so that in order
+  // to reverse the intent of the condition you only have to invert the low bit:
+
+  return static_cast<VCCC::CondCodes>(static_cast<unsigned>(CC) ^ 0x1);
+  }
+} // namespace VCCC
+
+inline static const char *VCCondCodeToString(VCCC::CondCodes CC) {
+  switch (CC) {
+  case VCCC::EQ:  return "eq";
+  case VCCC::NE:  return "ne";
+  case VCCC::HS:  return "hs";
+  case VCCC::LO:  return "lo";
+  case VCCC::MI:  return "mi";
+  case VCCC::PL:  return "pl";
+  case VCCC::VS:  return "vs";
+  case VCCC::VC:  return "vc";
+  case VCCC::HI:  return "hi";
+  case VCCC::LS:  return "ls";
+  case VCCC::GE:  return "ge";
+  case VCCC::LT:  return "lt";
+  case VCCC::GT:  return "gt";
+  case VCCC::LE:  return "le";
+  case VCCC::AL:  return "al";
+  }
+  llvm_unreachable("Unknown condition code");
+}
+
 /// VideocoreII - This namespace holds all of the target specific flags that
 /// instruction info tracks.
 ///

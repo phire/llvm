@@ -19,7 +19,7 @@
 #include "VideocoreISelLowering.h"
 #include "VideocoreSelectionDAGInfo.h"
 #include "VideocoreSubtarget.h"
-#include "llvm/DataLayout.h"
+#include "llvm/IR/DataLayout.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetFrameLowering.h"
 
@@ -38,12 +38,14 @@ public:
                      Reloc::Model RM, CodeModel::Model CM,
                      CodeGenOpt::Level OL);
 
-  virtual const VideocoreInstrInfo *getInstrInfo() const { return &InstrInfo; }
+  virtual const VideocoreInstrInfo *getInstrInfo() const { 
+	return &InstrInfo;
+ }
   virtual const TargetFrameLowering  *getFrameLowering() const {
     return &FrameLowering;
   }
   virtual const VideocoreRegisterInfo *getRegisterInfo() const {
-    return &InstrInfo.getRegisterInfo();
+    return &getInstrInfo()->getRegisterInfo();
   }
   virtual const VideocoreTargetLowering* getTargetLowering() const {
     return &TLInfo;
@@ -51,8 +53,12 @@ public:
   virtual const VideocoreSelectionDAGInfo* getSelectionDAGInfo() const {
     return &TSInfo;
   }
-  virtual const VideocoreSubtarget   *getSubtargetImpl() const { return &Subtarget; }
-  virtual const DataLayout       *getDataLayout() const { return &DL; }
+  virtual const VideocoreSubtarget *getSubtargetImpl() const { 
+    return &Subtarget; 
+  }
+  virtual const DataLayout *getDataLayout() const { 
+    return &DL; 
+  }
 
   // Pass Pipeline Configuration
   virtual TargetPassConfig *createPassConfig(PassManagerBase &PM);

@@ -40,6 +40,7 @@ private:
   void printS16ImmOperand(const MCInst *MI, int opNum, raw_ostream &O);
   void printU32ImmOperand(const MCInst *MI, int opNum, raw_ostream &O);
   void printMemOperand(const MCInst *MI, int opNum, raw_ostream &O);
+  void printCondCodeOperand(const MCInst *MI, int opNum, raw_ostream &O);
 };
 }
 

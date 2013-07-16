@@ -111,11 +111,11 @@ class ArithLogicRRR<bits<5> op, dag ins, string asmstr, list<dag> pattern>
 class ArithLogicQI<bits<5> op, dag ins, string asmstr, list<dag> pattern>
    : InstVC16<(outs LowReg:$Rd), ins, asmstr, pattern> {
   bits<4> Rd;
-  bits<5> immU5;
+  bits<5> imm;
 
   let Inst{15-13} = 3;
   let Inst{12-9} = op{4-1};
-  let Inst{8-4} = immU5;
+  let Inst{8-4} = imm;
   let Inst{3-0} = Rd;
 }
 
