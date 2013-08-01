@@ -574,6 +574,9 @@ let Constraints="$src = $Rd" in {
 def BSETrr : ArithLogicRRR<16, (ins IntReg:$Ra, IntReg:$Rb),
 		"bset $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (or IntReg:$Ra, (shl 1, IntReg:$Rb)))]>;
+def BSETrri : ArithLogicRRI<16, (ins IntReg:$Rs, immS6opnd:$imm), 
+		"bset $Rd, $Rs, $imm",
+		[(set IntReg:$Rd, (and IntReg:$Rs, BITi:$imm))]>;
 
 // 17 - MIN
 
