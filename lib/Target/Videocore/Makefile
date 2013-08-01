@@ -22,6 +22,6 @@ BUILT_SOURCES = VideocoreGenRegisterInfo.inc \
 		VideocoreGenSubtargetInfo.inc \
 		VideocoreGenCallingConv.inc
 
-DIRS = InstPrinter AsmParser TargetInfo MCTargetDesc
+DIRS = InstPrinter AsmParser Disassembler TargetInfo MCTargetDesc
 
 include $(LEVEL)/Makefile.common

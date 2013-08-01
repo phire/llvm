@@ -144,6 +144,7 @@ let PrintMethod = "printMemOperand" in {
   }
   def MEMri : Operand<i32> {
     let MIOperandInfo = (ops IntReg, i32imm);
+    let DecoderMethod = "DecodeMEMri";
   }
   // For instructions that can only access the lower 16 registers
   def MEMqq : Operand<i32> {
@@ -398,6 +399,8 @@ def STWrri : InstVC32<(outs), (ins IntReg:$src, MEMri:$addr), "st $src, $addr",
     let Inst{20-16} = Rd;
     let Inst{15-11} = Rs;
     let Inst{10-0} = offset{10-0};
+
+    let DecoderMethod = "DecodeMem_5_12";
 }
 
 def LDWrri : InstVC32<(outs IntReg:$dst), (ins MEMri:$addr), "ld $dst, $addr",
@@ -412,6 +415,8 @@ def LDWrri : InstVC32<(outs IntReg:$dst), (ins MEMri:$addr), "ld $dst, $addr",
     let Inst{20-16} = Rd;
     let Inst{15-11} = Rs;
     let Inst{10-0} = offset{10-0};
+
+    let DecoderMethod = "DecodeMem_5_12";
 }
 
 
@@ -453,7 +458,7 @@ defm SUB  : ArithLogicO3<6, "sub", sub>; // use O3, so SUBqi isn't created
 
 // llvm prefers adding negitave constants instead of using our smaller sub.
 // So we override SUBqi to match additions with small negitave numbers
-def SUBqi : ArithLogicQI<14, (ins LowReg:$src, immU5opnd:$imm),
+def SUBqi : ArithLogicQI<6, (ins LowReg:$src, immU5opnd:$imm),
 		"sub $Rd, $imm",
         [(set LowReg:$Rd, (add LowReg:$src, NEGu5:$imm))]>;
 
@@ -548,20 +553,20 @@ def BCLRrr : ArithLogicRRR<18, (ins IntReg:$Ra, IntReg:$Rb),
 
 let Constraints="$src = $Rd" in {
   let isConvertibleToThreeAddress = 1 in
-  def BCHGqq : ArithLogicQQ<16, (ins LowReg:$src, LowReg:$Rb), 
+  def BCHGqq : ArithLogicQQ<20, (ins LowReg:$src, LowReg:$Rb), 
 		"bchg $Rd, $Rb",
         [(set LowReg:$Rd, (xor LowReg:$src, (shl 1, LowReg:$Rb)))]>;
-  def BCHGqi : ArithLogicQI<16, (ins LowReg:$src, immU5opnd:$imm),
+  def BCHGqi : ArithLogicQI<20, (ins LowReg:$src, immU5opnd:$imm),
 		"bchg $Rd, $imm",
         [(set LowReg:$Rd, (xor LowReg:$src, BITi:$imm))]>;
-  def BCHGri : ArithLogicRI<16, (ins IntReg:$src, immS16opnd:$imm), 
+  def BCHGri : ArithLogicRI<20, (ins IntReg:$src, immS16opnd:$imm), 
 		"bchg $Rd, $imm",
 		[(set IntReg:$Rd, (xor IntReg:$src, BITi:$imm))]>;
-  def BCHGi48 : ArithLogic48<16, (ins IntReg:$src, immU32opnd:$imm), // useless
+  def BCHGi48 : ArithLogic48<20, (ins IntReg:$src, immU32opnd:$imm), // useless
 		"bchg $Rd, $imm",
 		[(set IntReg:$Rd, (xor IntReg:$src, BITi:$imm))]>;
 }
-def BCHGrr : ArithLogicRRR<16, (ins IntReg:$Ra, IntReg:$Rb),
+def BCHGrr : ArithLogicRRR<20, (ins IntReg:$Ra, IntReg:$Rb),
 		"bchg $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (xor IntReg:$Ra, (shl 1, IntReg:$Rb)))]>;
 

@@ -18,7 +18,7 @@ class InstVC<int sz, dag outs, dag ins, string asmstr, list<dag> pattern> : Inst
   let AsmString   = asmstr;
   let Pattern = pattern;
 
-  field bits<32> SoftFail = 0;
+  field bits<48> SoftFail = 0;
 }
 
 class InstVC16<dag outs, dag ins, string asmstr, list<dag> pattern> 
