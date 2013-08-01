@@ -37,7 +37,7 @@ private:
   void printOperand(const MCInst *MI, unsigned OpNo, raw_ostream &O);
   void printUnsignedImm(const MCInst *MI, int opNum, raw_ostream &O);
   void printU5ImmOperand(const MCInst *MI, int opNum, raw_ostream &O);
-  void printS16ImmOperand(const MCInst *MI, int opNum, raw_ostream &O);
+  void printSignedImmOperand(const MCInst *MI, int opNum, raw_ostream &O);
   void printU32ImmOperand(const MCInst *MI, int opNum, raw_ostream &O);
   void printMemOperand(const MCInst *MI, int opNum, raw_ostream &O);
   void printCondCodeOperand(const MCInst *MI, int opNum, raw_ostream &O);

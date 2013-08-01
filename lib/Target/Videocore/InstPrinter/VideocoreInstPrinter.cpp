@@ -100,7 +100,7 @@ void VideocoreInstPrinter::printU5ImmOperand(const MCInst *MI, int OpNo,
     O << (unsigned int)Value;
 }
 
-void VideocoreInstPrinter::printS16ImmOperand(const MCInst *MI, int OpNo,
+void VideocoreInstPrinter::printSignedImmOperand(const MCInst *MI, int OpNo,
                                                raw_ostream &O) {
     unsigned int Value = MI->getOperand(OpNo).getImm();
     O << (int)Value;

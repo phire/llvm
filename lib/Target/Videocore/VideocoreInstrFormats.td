@@ -130,6 +130,24 @@ class ArithLogicRI<bits<5> op, dag ins, string asmstr, list<dag> pattern>
   let Inst{15-0} = imm;
 }
 
+class ArithLogicRRI<bits<5> op, dag ins, string asmstr, list<dag> pattern>
+   : InstVC32<(outs IntReg:$Rd), ins, asmstr, pattern> {
+  bits<5> Rd;
+  bits<5> Rs;
+  bits<4> Cond;
+  bits<6> imm; // Signed
+
+  let Inst{31-26} = 0b110000;
+  let Inst{25-21} = op;
+  let Inst{20-16} = Rd;
+  let Inst{15-11} = Rs;
+  let Inst{10-7} = Cond;
+  let Inst{6} = 1;
+  let Inst{5-0} = imm;
+
+  let isPredicable = 1;
+}
+
 class ArithLogic48<bits<5> op, dag ins, string asmstr, list<dag> pattern>
    : InstVC48<(outs IntReg:$Rd), ins, asmstr, pattern> {
   bits<5> Rd;

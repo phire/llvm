@@ -97,10 +97,16 @@ def immU16 : PatLeaf<(imm), [{
   return (uint32_t)N->getZExtValue() < (1 << 16);
 }]>;
 
+def immS6 : PatLeaf<(imm), [{ return isInt<6>(N->getSExtValue()); }]>;
+
+def immS6opnd : Operand<i32> {
+      let PrintMethod = "printSignedImmOperand";
+}
+
 def immS16 : PatLeaf<(imm), [{ return isInt<16>(N->getSExtValue()); }]>;
 
 def immS16opnd : Operand<i32> {
-      let PrintMethod = "printS16ImmOperand";
+      let PrintMethod = "printSignedImmOperand";
 }
 
 def immU32 : PatLeaf<(imm), [{ return isInt<32>(N->getZExtValue()); }]>;
@@ -190,7 +196,9 @@ multiclass ArithLogicE3<int opc, string asmstr, SDNode node> {
 		}
   def qi : ArithLogicQI<opc, (ins LowReg:$src, immU5opnd:$imm),
 		!strconcat(asmstr, " $Rd, $imm"),
-        [(set LowReg:$Rd, (node LowReg:$src, (i32 immU5:$imm)))]>;
+        [(set LowReg:$Rd, (node LowReg:$src, (i32 immU5:$imm)))]> {
+            let isConvertibleToThreeAddress = 1;
+		}
   def ri : ArithLogicRI<opc, (ins IntReg:$src, immS16opnd:$imm), 
 		!strconcat(asmstr, " $Rd, $imm"),
 		[(set IntReg:$Rd, (node IntReg:$src, (i32 immS16:$imm)))]>;
@@ -201,6 +209,9 @@ multiclass ArithLogicE3<int opc, string asmstr, SDNode node> {
   def rr : ArithLogicRRR<opc, (ins IntReg:$Ra, IntReg:$Rb),
 		!strconcat(asmstr, " $Rd, $Ra, $Rb"),
         [(set IntReg:$Rd, (node IntReg:$Ra, IntReg:$Rb))]>;
+  def rri : ArithLogicRRI<opc, (ins IntReg:$Rs, immS6opnd:$imm), 
+		!strconcat(asmstr, " $Rd, $Rs, $imm"),
+		[(set IntReg:$Rd, (node IntReg:$Rs, (i32 immS6:$imm)))]>;
 }
 
 // Even numbered operations
@@ -220,6 +231,9 @@ multiclass ArithLogicE2<int opc, string asmstr, SDNode node> {
   def rr : ArithLogicRR<opc, (ins IntReg:$Ra),
 		!strconcat(asmstr, " $Rd, $Ra"),
         [(set IntReg:$Rd, (node IntReg:$Ra))]>;
+  def rri : ArithLogicRRI<opc, (ins IntReg:$Rs), 
+        !strconcat(asmstr, " $Rd, $Rs"),
+        [(set IntReg:$Rd, (node IntReg:$Rs))]>;
 }
 
 // Odd numbered operations
@@ -240,6 +254,9 @@ multiclass ArithLogicO3<int opc, string asmstr, SDNode node> {
   def rr : ArithLogicRRR<opc, (ins IntReg:$Ra, IntReg:$Rb),
 		!strconcat(asmstr, " $Rd, $Ra, $Rb"),
         [(set IntReg:$Rd, (node IntReg:$Ra, IntReg:$Rb))]>;
+  def rri : ArithLogicRRI<opc, (ins IntReg:$Rs, immS6opnd:$imm), 
+		!strconcat(asmstr, " $Rd, $Rs, $imm"),
+		[(set IntReg:$Rd, (node IntReg:$Rs, (i32 immS6:$imm)))]>;
 }
 
 
@@ -297,6 +314,7 @@ def bcc : InstVC32<(outs),
 	let isBranch=1;
 	let isTerminator=1;
 	let hasDelaySlot=0;
+    let isPredicable=1;
 }
 
 
@@ -430,9 +448,13 @@ let isMoveImm=1 in {
         [(set LowReg:$Rd, (i32 immU5:$imm))]>;
   def MOVri : ArithLogicRI<0, (ins immS16opnd:$imm), "mov $Rd, $imm",
 		[(set IntReg:$Rd, (i32 immS16:$imm))]>;
+  def MOVrri : ArithLogicRRI<0, (ins immS6opnd:$imm), "mov $Rd, $imm",
+		[(set IntReg:$Rd, (i32 immS6:$imm))]>;
   def MOVi48 : ArithLogic48<0, (ins immU32opnd:$imm), "mov $Rd, $imm",
 		[(set IntReg:$Rd, (i32 immU32:$imm))]>;
 }
+
+// 1 - CMN
 
 defm ADD  : ArithLogicO3<2, "add", add>;
 
@@ -451,6 +473,10 @@ let Constraints="$src = $Rd" in {
 def BICrr : ArithLogicRRR<3, (ins IntReg:$Ra, IntReg:$Rb),
 		"bic $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (and IntReg:$Ra, (xor IntReg:$Rb, -1)))]>;
+def BICrri : ArithLogicRRI<3, (ins IntReg:$Rs, immS6opnd:$imm),
+		"bic $Rd, $Rs, $imm",
+        [(set IntReg:$Rd, (and IntReg:$Rs, (xor (i32 immS6:$imm), -1)))]>;
+
 
 defm MUL  : ArithLogicE3<4, "mul", mul>;
 defm XOR  : ArithLogicO3<5, "xor", xor>;
@@ -470,9 +496,16 @@ def MVNrr : ArithLogicRR<8, (ins IntReg:$Ra), "mvn $Rd, $Ra",
 		[(set IntReg:$Rd, (xor IntReg:$Ra, -1))]>;
 def MVNqi : ArithLogicQI<8, (ins immU5opnd:$imm), "mvn $Rd, $imm",
 		[(set LowReg:$Rd, (xor (i32 immU5:$imm), -1))]>;
-// MVNri and MVNi48 are pointless to implement
+def MVNri : ArithLogicRI<8, (ins immS16opnd:$imm), "mvn $Rd, $imm",
+		[(set IntReg:$Rd, (xor (i32 immS16:$imm), -1))]>;
+def MVNrri : ArithLogicRRI<8, (ins immS6opnd:$imm), "mvn $Rd, $imm",
+		[(set IntReg:$Rd, (xor (i32 immS6:$imm), -1))]>;
+def MVNi48 : ArithLogic48<8, (ins immU32opnd:$imm), "mvn $Rd, $imm",
+		[(set IntReg:$Rd, (xor (i32 immU32:$imm), -1))]>;
 
 defm ROR  : ArithLogicO3<9, "ror", rotr>;
+
+// 10 - CMP
 
 let Constraints="$src = $Rd" in {
   let isConvertibleToThreeAddress = 1 in
@@ -489,18 +522,23 @@ let Constraints="$src = $Rd" in {
 def RSBrr : ArithLogicRRR<11, (ins IntReg:$Ra, IntReg:$Rb),
 		"rsb $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (sub IntReg:$Rb, IntReg:$Ra))]>;
+def RSBrri : ArithLogicRRI<11, (ins IntReg:$Rs, immS6opnd:$imm),
+		"rsb $Rd, $Rs, $imm",
+        [(set IntReg:$Rd, (sub (i32 immS16:$imm), IntReg:$Rs))]>;
 
+// 12 - BTST
 
 defm OR   : ArithLogicO3<13, "or", or>;
 
 let Constraints="$src = $Rd" in {
-  let isConvertibleToThreeAddress = 1 in
+  let isConvertibleToThreeAddress = 1 in {
   def EXTUqq : ArithLogicQQ<14, (ins LowReg:$src, LowReg:$Rb), 
 		"extu $Rd, $Rb",
         [(set LowReg:$Rd, (and LowReg:$src, (add (shl 1, LowReg:$Rb), -1)))]>;
   def EXTUqi : ArithLogicQI<14, (ins LowReg:$src, immU5opnd:$imm),
 		"extu $Rd, $imm",
         [(set LowReg:$Rd, (and LowReg:$src, MASKi:$imm))]>;
+  }
   def EXTUri : ArithLogicRI<14, (ins IntReg:$src, immS16opnd:$imm), 
 		"extu $Rd, $imm",
 		[(set IntReg:$Rd, (and IntReg:$src, MASKi:$imm))]>;
@@ -511,16 +549,21 @@ let Constraints="$src = $Rd" in {
 def EXTUrr : ArithLogicRRR<14, (ins IntReg:$Ra, IntReg:$Rb),
 		"extu $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (and IntReg:$Ra, (add (shl 1, IntReg:$Rb), -1)))]>;
+def EXTUrri : ArithLogicRRI<14, (ins IntReg:$Rs, immS6opnd:$imm),
+		"extu $Rd, $Rs, $imm",
+        [(set IntReg:$Rd, (and IntReg:$Rs, MASKi:$imm))]>;
 
+// 15 - MAX
 
 let Constraints="$src = $Rd" in {
-  let isConvertibleToThreeAddress = 1 in
+  let isConvertibleToThreeAddress = 1 in {
   def BSETqq : ArithLogicQQ<16, (ins LowReg:$src, LowReg:$Rb), 
 		"bset $Rd, $Rb",
         [(set LowReg:$Rd, (or LowReg:$src, (shl 1, LowReg:$Rb)))]>;
   def BSETqi : ArithLogicQI<16, (ins LowReg:$src, immU5opnd:$imm),
 		"bset $Rd, $imm",
         [(set LowReg:$Rd, (or LowReg:$src, BITi:$imm))]>;
+  }
   def BSETri : ArithLogicRI<16, (ins IntReg:$src, immS16opnd:$imm), 
 		"bset $Rd, $imm",
 		[(set IntReg:$Rd, (or IntReg:$src, BITi:$imm))]>;
@@ -532,14 +575,17 @@ def BSETrr : ArithLogicRRR<16, (ins IntReg:$Ra, IntReg:$Rb),
 		"bset $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (or IntReg:$Ra, (shl 1, IntReg:$Rb)))]>;
 
+// 17 - MIN
+
 let Constraints="$src = $Rd" in {
-  let isConvertibleToThreeAddress = 1 in
+  let isConvertibleToThreeAddress = 1 in {
   def BCLRqq : ArithLogicQQ<18, (ins LowReg:$src, LowReg:$Rb), 
 		"bclr $Rd, $Rb",
         [(set LowReg:$Rd, (and LowReg:$src, (xor (shl 1, LowReg:$Rb), -1)))]>;
   def BCLRqi : ArithLogicQI<18, (ins LowReg:$src, immU5opnd:$imm),
 		"bclr $Rd, $imm",
         [(set LowReg:$Rd, (and LowReg:$src, NOTBITi:$imm))]>;
+  }
   def BCLRri : ArithLogicRI<18, (ins IntReg:$src, immS16opnd:$imm), 
 		"bclr $Rd, $imm",
 		[(set IntReg:$Rd, (and IntReg:$src, NOTBITi:$imm))]>;
@@ -550,15 +596,21 @@ let Constraints="$src = $Rd" in {
 def BCLRrr : ArithLogicRRR<18, (ins IntReg:$Ra, IntReg:$Rb),
 		"bclr $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (and IntReg:$Ra, (xor (shl 1, IntReg:$Rb), -1)))]>;
+def BCLRrri : ArithLogicRRI<18, (ins IntReg:$Rs, immS6opnd:$imm), 
+		"bclr $Rd, $Rs, $imm",
+		[(set IntReg:$Rd, (and IntReg:$Rs, NOTBITi:$imm))]>;
+
+// 19 - addscale 1
 
 let Constraints="$src = $Rd" in {
-  let isConvertibleToThreeAddress = 1 in
+  let isConvertibleToThreeAddress = 1 in {
   def BCHGqq : ArithLogicQQ<20, (ins LowReg:$src, LowReg:$Rb), 
 		"bchg $Rd, $Rb",
         [(set LowReg:$Rd, (xor LowReg:$src, (shl 1, LowReg:$Rb)))]>;
   def BCHGqi : ArithLogicQI<20, (ins LowReg:$src, immU5opnd:$imm),
 		"bchg $Rd, $imm",
         [(set LowReg:$Rd, (xor LowReg:$src, BITi:$imm))]>;
+  }
   def BCHGri : ArithLogicRI<20, (ins IntReg:$src, immS16opnd:$imm), 
 		"bchg $Rd, $imm",
 		[(set IntReg:$Rd, (xor IntReg:$src, BITi:$imm))]>;
@@ -569,11 +621,27 @@ let Constraints="$src = $Rd" in {
 def BCHGrr : ArithLogicRRR<20, (ins IntReg:$Ra, IntReg:$Rb),
 		"bchg $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (xor IntReg:$Ra, (shl 1, IntReg:$Rb)))]>;
+def BCHGrri : ArithLogicRRI<20, (ins IntReg:$Rs, immS6opnd:$imm), 
+		"bchg $Rd, $Rs, $imm",
+		[(set IntReg:$Rd, (xor IntReg:$Rs, BITi:$imm))]>;
 
+// 21 - ADDSCALE 2
+// 22 - ADDSCALE 3
+// 23 - ADDSCALE 4
+// 24 - SIGNEXT
+// 25 - NEG
 
 defm LSR  : ArithLogicE3<26, "lsr", srl>;
+
+// 27 - MSB
+
 defm LSL  : ArithLogicE3<28, "lsl", shl>;
+
+// 29 - BITREV
+
 defm ASR  : ArithLogicE3<30, "asr", sra>;
+
+// 31 - ABS
 
 
 
