@@ -25,12 +25,13 @@ foreach i = 0-15 in
     def R#i : Ri< i, "r"#i >, DwarfRegNum<[i]>;
 // Not all instruction encodings can access these registers
 let CostPerUse = 1 in {
-foreach i = [16,17,18,19,20,21,22,23,24,27,28,29] in
+  foreach i = [16,17,18,19,20,21,22,23,24,27,28,29] in
     def R#i : Ri< i, "r"#i >, DwarfRegNum<[i]>;
-def SP  : Ri<25, "sp", ["R25"]>, DwarfRegNum<[25]>;
-def LR  : Ri<26, "lr", ["R26"]>, DwarfRegNum<[26]>; 
-def SR  : Ri<30, "sr", ["R30"]>, DwarfRegNum<[30]>;
-def PC  : Ri<31, "pc", ["R31"]>, DwarfRegNum<[31]>;
+  
+  def SP  : Ri<25, "sp", ["R25"]>, DwarfRegNum<[25]>;
+  def LR  : Ri<26, "lr", ["R26"]>, DwarfRegNum<[26]>; 
+  def SR  : Ri<30, "sr", ["R30"]>, DwarfRegNum<[30]>;
+  def PC  : Ri<31, "pc", ["R31"]>, DwarfRegNum<[31]>;
 }
 
 // Register classes.
@@ -38,11 +39,8 @@ def IntReg : RegisterClass<"VC", [i32], 32,
                             (add R0, R1, R2, R3, R4, R5, R6,
                                  R7, R8, R9, R10, R11, R12, R13,
                                  R14, R15, R16, R17, R18, R19, R20,
-                                 R21, R22, R23, R24, R27, R28, R29,
-                                 // Non-allocatable regs:
-                                 SP, // stack ptr
-                                 LR, // link return
-                                 SR)>; // status reg
+                                 R21, R22, R23, R24, SP, LR, R27, 
+                                 R28, R29, SR, PC)>; // status reg
 
 def LowReg : RegisterClass<"VC", [i32], 32,
                             (add R0, R1, R2, R3, R4, R5, R6,

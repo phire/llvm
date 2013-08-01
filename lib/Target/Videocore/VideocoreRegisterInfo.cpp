@@ -40,7 +40,7 @@ BitVector VideocoreRegisterInfo::getReservedRegs(const MachineFunction &MF) cons
   Reserved.set(VC::SP); // Stack pointer
   Reserved.set(VC::LR); // link return
   Reserved.set(VC::SR); // status reg
-  //Reserved.set(VC::PC); // program counter
+  Reserved.set(VC::PC); // program counter
   return Reserved;
 }
 
