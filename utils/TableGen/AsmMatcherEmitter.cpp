@@ -2043,7 +2043,7 @@ static void emitValidateOperandClass(AsmMatcherInfo &Info,
   for (AsmMatcherInfo::RegisterClassesTy::iterator
          it = Info.RegisterClasses.begin(), ie = Info.RegisterClasses.end();
        it != ie; ++it)
-    OS << "    case " << Info.Target.getName() << "::"
+    OS << "    case " << it->first->getValueAsString("Namespace") << "::"
        << it->first->getName() << ": OpKind = " << it->second->Name
        << "; break;\n";
   OS << "    }\n";
@@ -2788,7 +2788,7 @@ void AsmMatcherEmitter::run(raw_ostream &OS) {
     std::string LenMnemonic = char(II.Mnemonic.size()) + II.Mnemonic.str();
     OS << "  { " << StringTable.GetOrAddStringOffset(LenMnemonic, false)
        << " /* " << II.Mnemonic << " */, "
-       << Target.getName() << "::"
+       << II.getResultInst()->TheDef->getValueAsString("Namespace") << "::"
        << II.getResultInst()->TheDef->getName() << ", "
        << II.ConversionFnKind << ", ";
 
