@@ -1,4 +1,4 @@
-;===- ./lib/Target/Sparc/LLVMBuild.txt -------------------------*- Conf -*--===;
+;===- ./lib/Target/SystemZ/AsmParser/LLVMBuild.txt -------------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;
@@ -15,20 +15,9 @@
 ;
 ;===------------------------------------------------------------------------===;
 
-[common]
-subdirectories = MCTargetDesc TargetInfo InstPrinter
-
 [component_0]
-type = TargetGroup
-name = Videocore
-parent = Target
-
-has_asmparser = 1
-has_asmprinter = 1
-
-[component_1]
 type = Library
-name = VideocoreCodeGen
+name = VideocoreAsmParser
 parent = Videocore
-required_libraries = AsmPrinter CodeGen Core MC VideocoreAsmPrinter SelectionDAG VideocoreDesc VideocoreInfo Support Target
+required_libraries = VideocoreDesc VideocoreInfo MC MCParser Support
 add_to_library_groups = Videocore

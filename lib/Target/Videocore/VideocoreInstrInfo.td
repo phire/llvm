@@ -572,8 +572,7 @@ defm ASR  : ArithLogicE3<30, "asr", sra>;
 
 
 
-let isReturn=1, isTerminator=1, isCodeGenOnly=1,
-        isBarrier=1, hasCtrlDep=1 in
+let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1 in
     def BLR : InstVC16<(outs), (ins), "blr",
                 [(retflag)]> {
         let Inst{15-0} = 0x5a;
