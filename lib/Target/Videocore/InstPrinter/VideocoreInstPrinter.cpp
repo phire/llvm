@@ -118,9 +118,18 @@ printMemOperand(const MCInst *MI, int opNum, raw_ostream &O) {
   // Load/Store memory operands -- imm($reg)
   // If PIC target the target is loaded as the
   // pattern ld $t9,%call24($gp)
-  printOperand(MI, opNum+1, O);
   O << "(";
   printOperand(MI, opNum, O);
+
+  MCOperand opnd2 = MI->getOperand(opNum+1);
+ 
+  if(opnd2.isImm() && opnd2.getImm() < 0) {
+    O << "-";
+    O << (int) opnd2.getImm() * -1;
+  } else {
+    O << "+";
+    printOperand(MI, opNum+1, O);
+  }
   O << ")";
 }
 

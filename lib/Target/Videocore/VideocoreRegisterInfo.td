@@ -27,10 +27,10 @@ foreach i = 0-15 in
 let CostPerUse = 1 in {
 foreach i = [16,17,18,19,20,21,22,23,24,27,28,29] in
     def R#i : Ri< i, "r"#i >, DwarfRegNum<[i]>;
-def SP  : Ri<25, "SP", ["R25"]>, DwarfRegNum<[25]>;
-def LR  : Ri<26, "LR", ["R26"]>, DwarfRegNum<[26]>; 
-def SR  : Ri<30, "SR", ["R30"]>, DwarfRegNum<[30]>;
-def PC  : Ri<31, "PC", ["R31"]>, DwarfRegNum<[31]>;
+def SP  : Ri<25, "sp", ["R25"]>, DwarfRegNum<[25]>;
+def LR  : Ri<26, "lr", ["R26"]>, DwarfRegNum<[26]>; 
+def SR  : Ri<30, "sr", ["R30"]>, DwarfRegNum<[30]>;
+def PC  : Ri<31, "pc", ["R31"]>, DwarfRegNum<[31]>;
 }
 
 // Register classes.
