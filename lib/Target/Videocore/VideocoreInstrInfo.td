@@ -490,17 +490,17 @@ def SUBqi : ArithLogicQI<6, (ins LowReg:$src, immU5opnd:$imm),
 
 defm AND  : ArithLogicO3<7, "and", and>;
 
-def MVNqq : ArithLogicQQ<8, (ins LowReg:$Ra), "mvn $Rd, $Ra",
+def NOTqq : ArithLogicQQ<8, (ins LowReg:$Ra), "not $Rd, $Ra",
 		[(set LowReg:$Rd, (xor LowReg:$Ra, -1))]>;
-def MVNrr : ArithLogicRR<8, (ins IntReg:$Ra), "mvn $Rd, $Ra",
+def NOTrr : ArithLogicRR<8, (ins IntReg:$Ra), "not $Rd, $Ra",
 		[(set IntReg:$Rd, (xor IntReg:$Ra, -1))]>;
-def MVNqi : ArithLogicQI<8, (ins immU5opnd:$imm), "mvn $Rd, $imm",
+def NOTqi : ArithLogicQI<8, (ins immU5opnd:$imm), "not $Rd, $imm",
 		[(set LowReg:$Rd, (xor (i32 immU5:$imm), -1))]>;
-def MVNri : ArithLogicRI<8, (ins immS16opnd:$imm), "mvn $Rd, $imm",
+def NOTri : ArithLogicRI<8, (ins immS16opnd:$imm), "not $Rd, $imm",
 		[(set IntReg:$Rd, (xor (i32 immS16:$imm), -1))]>;
-def MVNrri : ArithLogicRRI<8, (ins immS6opnd:$imm), "mvn $Rd, $imm",
+def NOTrri : ArithLogicRRI<8, (ins immS6opnd:$imm), "not $Rd, $imm",
 		[(set IntReg:$Rd, (xor (i32 immS6:$imm), -1))]>;
-def MVNi48 : ArithLogic48<8, (ins immU32opnd:$imm), "mvn $Rd, $imm",
+def NOTi48 : ArithLogic48<8, (ins immU32opnd:$imm), "not $Rd, $imm",
 		[(set IntReg:$Rd, (xor (i32 immU32:$imm), -1))]>;
 
 defm ROR  : ArithLogicO3<9, "ror", rotr>;
@@ -509,21 +509,21 @@ defm ROR  : ArithLogicO3<9, "ror", rotr>;
 
 let Constraints="$src = $Rd" in {
   let isConvertibleToThreeAddress = 1 in
-  def RSBqq : ArithLogicQQ<11, (ins LowReg:$src, LowReg:$Rb), 
-		"rsb $Rd, $Rb",
+  def RSUBqq : ArithLogicQQ<11, (ins LowReg:$src, LowReg:$Rb), 
+		"rsub $Rd, $Rb",
         [(set LowReg:$Rd, (sub LowReg:$Rb, LowReg:$src))]>;
-  def RSBri : ArithLogicRI<11, (ins IntReg:$src, immS16opnd:$imm), 
-		"rsb $Rd, $imm",
+  def RSUBri : ArithLogicRI<11, (ins IntReg:$src, immS16opnd:$imm), 
+		"rsub $Rd, $imm",
 		[(set IntReg:$Rd, (sub (i32 immS16:$imm), IntReg:$src))]>;
-  def RSBi48 : ArithLogic48<11, (ins IntReg:$src, immU32opnd:$imm),
-		"rsb $Rd, $imm",
+  def RSUBi48 : ArithLogic48<11, (ins IntReg:$src, immU32opnd:$imm),
+		"rsub $Rd, $imm",
 		[(set IntReg:$Rd, (sub (i32 immU32:$imm), IntReg:$src))]>;
 }
-def RSBrr : ArithLogicRRR<11, (ins IntReg:$Ra, IntReg:$Rb),
-		"rsb $Rd, $Ra, $Rb",
+def RSUBrr : ArithLogicRRR<11, (ins IntReg:$Ra, IntReg:$Rb),
+		"rsub $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (sub IntReg:$Rb, IntReg:$Ra))]>;
-def RSBrri : ArithLogicRRI<11, (ins IntReg:$Rs, immS6opnd:$imm),
-		"rsb $Rd, $Rs, $imm",
+def RSUBrri : ArithLogicRRI<11, (ins IntReg:$Rs, immS6opnd:$imm),
+		"rsub $Rd, $Rs, $imm",
         [(set IntReg:$Rd, (sub (i32 immS16:$imm), IntReg:$Rs))]>;
 
 // 12 - BTST
@@ -532,25 +532,25 @@ defm OR   : ArithLogicO3<13, "or", or>;
 
 let Constraints="$src = $Rd" in {
   let isConvertibleToThreeAddress = 1 in {
-  def EXTUqq : ArithLogicQQ<14, (ins LowReg:$src, LowReg:$Rb), 
-		"extu $Rd, $Rb",
+  def BMASKqq : ArithLogicQQ<14, (ins LowReg:$src, LowReg:$Rb), 
+		"bmask $Rd, $Rb",
         [(set LowReg:$Rd, (and LowReg:$src, (add (shl 1, LowReg:$Rb), -1)))]>;
-  def EXTUqi : ArithLogicQI<14, (ins LowReg:$src, immU5opnd:$imm),
-		"extu $Rd, $imm",
+  def BMASKqi : ArithLogicQI<14, (ins LowReg:$src, immU5opnd:$imm),
+		"bmask $Rd, $imm",
         [(set LowReg:$Rd, (and LowReg:$src, MASKi:$imm))]>;
   }
-  def EXTUri : ArithLogicRI<14, (ins IntReg:$src, immS16opnd:$imm), 
-		"extu $Rd, $imm",
+  def BMASKri : ArithLogicRI<14, (ins IntReg:$src, immS16opnd:$imm), 
+		"bmask $Rd, $imm",
 		[(set IntReg:$Rd, (and IntReg:$src, MASKi:$imm))]>;
-  def EXTUi48 : ArithLogic48<14, (ins IntReg:$src, immU32opnd:$imm), // useless
-		"extu $Rd, $imm",
+  def BMASKi48 : ArithLogic48<14, (ins IntReg:$src, immU32opnd:$imm), // useless
+		"bmask $Rd, $imm",
 		[(set IntReg:$Rd, (and IntReg:$src, MASKi:$imm))]>;
 }
-def EXTUrr : ArithLogicRRR<14, (ins IntReg:$Ra, IntReg:$Rb),
-		"extu $Rd, $Ra, $Rb",
+def BMASKrr : ArithLogicRRR<14, (ins IntReg:$Ra, IntReg:$Rb),
+		"bmask $Rd, $Ra, $Rb",
         [(set IntReg:$Rd, (and IntReg:$Ra, (add (shl 1, IntReg:$Rb), -1)))]>;
-def EXTUrri : ArithLogicRRI<14, (ins IntReg:$Rs, immS6opnd:$imm),
-		"extu $Rd, $Rs, $imm",
+def BMASKrri : ArithLogicRRI<14, (ins IntReg:$Rs, immS6opnd:$imm),
+		"bmask $Rd, $Rs, $imm",
         [(set IntReg:$Rd, (and IntReg:$Rs, MASKi:$imm))]>;
 
 // 15 - MAX
@@ -635,7 +635,7 @@ defm LSR  : ArithLogicE3<26, "lsr", srl>;
 
 // 27 - MSB
 
-defm LSL  : ArithLogicE3<28, "lsl", shl>;
+defm SHL  : ArithLogicE3<28, "shl", shl>;
 
 // 29 - BITREV
 
