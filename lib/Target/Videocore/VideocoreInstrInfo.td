@@ -88,6 +88,10 @@ def immU5opnd : Operand<i32> {
       let PrintMethod = "printU5ImmOperand";
 }
 
+def immU6opnd : Operand<i32> {
+      let PrintMethod = "printU6ImmOperand";
+}
+
 def immU4 : PatLeaf<(imm), [{
   return (uint32_t)N->getZExtValue() < (1 << 4);
 }]>;
@@ -506,6 +510,7 @@ defm SUB  : ArithLogicO3<6, "sub", sub>; // use O3, so SUBqi isn't created
 
 // llvm prefers adding negitave constants instead of using our smaller sub.
 // So we override SUBqi to match additions with small negitave numbers
+let Constraints="$src = $Rd", DisableEncoding="$src" in
 def SUBqi : ArithLogicQI<6, (ins LowReg:$src, immU5opnd:$imm),
 		"sub $Rd, $imm",
         [(set LowReg:$Rd, (add LowReg:$src, NEGu5:$imm))]>;
@@ -681,11 +686,106 @@ defm ASR  : ArithLogicE3<30, "asr", sra>;
 
 
 
-let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1 in
+let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1, isCodeGenOnly=1 in
     def BLR : InstVC16<(outs), (ins), "blr",
                 [(retflag)]> {
         let Inst{15-0} = 0x5a;
 }
+
+// Utility Instructions
+
+let hasSideEffects = 1 in {
+  def BKPT : InstVC16<(outs), (ins), "bkpt", []> {
+    let Inst{15-0} = 0x0000;
+    let isTerminator = 1;
+  }
+  def NOP : InstVC16<(outs), (ins), "nop", []> {
+    let Inst{15-0} = 0x0001;
+    let hasSideEffects = 0;
+  }
+  def SLEEP : InstVC16<(outs), (ins), "sleep", []> {
+    let Inst{15-0} = 0x0002;
+  }
+  def USER : InstVC16<(outs), (ins), "user", []> {
+    let Inst{15-0} = 0x0003;
+  }
+  def EI : InstVC16<(outs), (ins), "ei", []> {
+    let Inst{15-0} = 0x0004;
+  }
+  def DI : InstVC16<(outs), (ins), "di", []> {
+    let Inst{15-0} = 0x0005;
+  }
+  def CLR : InstVC16<(outs), (ins), "clr", []> {
+    let Inst{15-0} = 0x0006;
+  }
+  def INC : InstVC16<(outs), (ins), "inc", []> {
+    let Inst{15-0} = 0x0007;
+  }
+  def CHG : InstVC16<(outs), (ins), "chg", []> {
+    let Inst{15-0} = 0x0008;
+  }
+  def DEC : InstVC16<(outs), (ins), "dec", []> {
+    let Inst{15-0} = 0x0009;
+  }
+}
+
+// Return from interrupt
+def RTI : InstVC16<(outs), (ins), "rti", []> {
+  let Inst{15-0} = 0x000a;
+  let isReturn=1;
+  let isTerminator=1;
+  let isBarrier=1;
+  let hasCtrlDep=1;
+  let hasSideEffects = 1;
+}
+
+let isCall = 1, hasSideEffects = 1 in {
+  def SWIr : InstVC16<(outs), (ins IntReg:$Rd), "swi $Rd", []> {
+    bits<5> Rd;
+    let Inst{15-5} = 1;
+    let Inst{4-0} = Rd;
+  }
+  def SWIi : InstVC16<(outs), (ins immU6opnd:$imm), "swi $imm", []> {
+    bits<6> imm;
+    let Inst{15-6} = 7;
+    let Inst{5-0} = imm;
+  }
+}
+
+// Branching
+let isBranch=1, isTerminator=1, isBarrier=1 in
+def Br : InstVC16<(outs), (ins IntReg:$Rd), "b $Rd", /*[(br bb:$Rd)]*/ []> {
+  bits<5> Rd;
+  let Inst{15-5} = 2;
+  let Inst{4-0} = Rd;
+}
+let isCall=1 in
+def BLr : InstVC16<(outs), (ins IntReg:$Rd), "bl $Rd", []> {
+  bits<5> Rd;
+  let Inst{15-5} = 3;
+  let Inst{4-0} = Rd;
+}
+
+// Table/Switch jumps
+let isBranch=1, isTerminator=1, isBarrier=1, hasSideEffects=1 in {
+  def TBB : InstVC16<(outs), (ins IntReg:$Rd), "tbb $Rd", []> {
+    bits<5> Rd;
+    let Inst{15-5} = 4;
+    let Inst{4-0} = Rd;
+  }
+  def TBH : InstVC16<(outs), (ins IntReg:$Rd), "tbh $Rd", []> {
+    bits<5> Rd;
+    let Inst{15-5} = 5;
+    let Inst{4-0} = Rd;
+  }
+}
+
+def CPUID : InstVC16<(outs IntReg:$Rd), (ins), "cpuid $Rd", []> {
+  bits<5> Rd;
+  let Inst{15-5} = 7;
+  let Inst{4-0} = Rd;
+}
+
 
 //===----------------------------------------------------------------------===//
 // Non-Instruction Patterns
