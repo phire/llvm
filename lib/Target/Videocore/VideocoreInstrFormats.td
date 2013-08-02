@@ -66,6 +66,79 @@ class LEA16_sp<bit ld_st, dag outs, dag ins, string asmstr, list<dag> pattern>
   let Inst{4-0} = Rd;
 }
 
+class RRR<bits<10> op, string asmstr, list<dag> pattern>
+   : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, IntReg:$Rb), asmstr, pattern> {
+  bits<5> Rd;
+  bits<5> Ra;
+  bits<5> Rb;
+  bits<4> Cond;
+
+  let Inst{31} = 1;
+  let Inst{30-21} = op;
+  let Inst{20-16} = Rd;
+  let Inst{15-11} = Ra;
+  let Inst{10-7 } = Cond;
+  let Inst{6-5} = 0;
+  let Inst{4-0} = Rb;
+
+  let isPredicable = 1;
+}
+
+class R_R<bits<10> op, string asmstr, list<dag> pattern>
+   : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Rb), asmstr, pattern> {
+  bits<5> Rd;
+  bits<5> Rb;
+  bits<4> Cond;
+
+  let Inst{31} = 1;
+  let Inst{30-21} = op;
+  let Inst{20-16} = Rd;
+  let Inst{15-11} = 0;
+  let Inst{10-7 } = Cond;
+  let Inst{6-5} = 0;
+  let Inst{4-0} = Rb;
+
+  let isPredicable = 1;
+}
+
+
+class RRI<bits<10> op, string asmstr, list<dag> pattern>
+   : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, immS6opnd:$imm), asmstr, pattern> {
+  bits<5> Rd;
+  bits<5> Ra;
+  bits<6> imm;
+  bits<4> Cond;
+
+  let Inst{31} = 1;
+  let Inst{30-21} = op;
+  let Inst{20-16} = Rd;
+  let Inst{15-11} = Ra;
+  let Inst{10-7 } = Cond;
+  let Inst{6} = 1;
+  let Inst{5-0} = imm;
+
+  let isPredicable = 1;
+}
+
+class R_I<bits<10> op, string asmstr, list<dag> pattern>
+   : InstVC32<(outs IntReg:$Rd), (ins immS6opnd:$imm), asmstr, pattern> {
+  bits<5> Rd;
+  bits<6> imm;
+  bits<4> Cond;
+
+  let Inst{31} = 1;
+  let Inst{30-21} = op;
+  let Inst{20-16} = Rd;
+  let Inst{15-11} = 0;
+  let Inst{10-7 } = Cond;
+  let Inst{6} = 1;
+  let Inst{5-0} = imm;
+
+  let isPredicable = 1;
+}
+
+
+
 // Arithmetic and logic instruction formats
 
 class ArithLogicQQ<bits<5> op, dag ins, string asmstr, list<dag> pattern>

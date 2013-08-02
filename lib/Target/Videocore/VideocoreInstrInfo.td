@@ -545,26 +545,6 @@ def ADDrPCi48 : InstVC48<(outs IntReg:$Rd), (ins immU32opnd:$imm),
   let Uses = [PC];
 }
 
-// 1100 0101 111d dddd aaaa accc c00b bbbb  -  addcc rd, ra, rb shl 8"
-// TODO: Are there more of these?
-def ADDrrrShl8 : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, IntReg:$Rb),
-        "add $Rd, $Ra, $Rb shl 8",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 8)))]> {
-  bits<5> Rd;
-  bits<5> Ra;
-  bits<5> Rb;
-  bits<4> Cond;
-  let Inst{31-21} = 0b11000101111;
-  let Inst{20-16} = Rd;
-  let Inst{15-11} = Ra;
-  let Inst{10-7} = Cond;
-  let Inst{6-5} = 0;
-  let Inst{4-0} = Rd;
-
-  let isPredicable=1;
-}
-
-
 
 let Constraints="$src = $Rd", DisableEncoding="$src" in {
   let isConvertibleToThreeAddress = 1 in
@@ -889,6 +869,101 @@ def ASBrr : ArithLogicRRR<31, (ins IntReg:$Ra, IntReg:$Rb),
 def ASBrri : ArithLogicRRI<31, (ins IntReg:$Rs, immS6opnd:$imm),
 		"asb $Rd, $Rs, $imm",
         []>;
+
+// Conditional Multiply Instructions  FIXME: no codegen
+// TODO: put dots back in name see: 
+// https://llvm.org/viewvc/llvm-project?view=revision&revision=186388
+def MULHDSSrrr : RRR<0b1000100000, "mulhdss $Rd, $Ra, $Rb", []>; 
+def MULHDSSrri : RRI<0b1000100000, "mulhdss $Rd, $Ra, $imm", []>;
+def MULHDSUrrr : RRR<0b1000100001, "mulhdsu $Rd, $Ra, $Rb", []>;
+def MULHDSUrri : RRI<0b1000100001, "mulhdsu $Rd, $Ra, $imm", []>;
+def MULHDUSrrr : RRR<0b1000100010, "mulhdus $Rd, $Ra, $Rb", []>;
+def MULHDUSrri : RRI<0b1000100010, "mulhdus $Rd, $Ra, $imm", []>;
+def MULHDUUrrr : RRR<0b1000100011, "mulhduu $Rd, $Ra, $Rb", []>;
+def MULHDUUrri : RRI<0b1000100011, "mulhduu $Rd, $Ra, $imm", []>;
+
+// Conditional Divide Instructions   FIXME: no codegen
+def DIVSSrrr : RRR<0b1000100100, "divss $Rd, $Ra, $Rb", []>;
+def DIVSSrri : RRI<0b1000100100, "divss $Rd, $Ra, $imm", []>;
+def DIVSUrrr : RRR<0b1000100101, "divsu $Rd, $Ra, $Rb", []>;
+def DIVSUrri : RRI<0b1000100101, "divsu $Rd, $Ra, $imm", []>;
+def DIVUSrrr : RRR<0b1000100110, "divus $Rd, $Ra, $Rb", []>;
+def DIVUSrri : RRI<0b1000100110, "divus $Rd, $Ra, $imm", []>;
+def DIVUUrrr : RRR<0b1000100111, "divuu $Rd, $Ra, $Rb", []>;
+def DIVUUrri : RRI<0b1000100111, "divuu $Rd, $Ra, $imm", []>;
+
+
+// Additional Conditional Arithmetic and Logical Operations
+// no codegen (intrinsics?)
+def ADDSrrr : RRR<0b1000101000, "adds $Rd, $Ra, $Rb", []>;
+def ADDSrri : RRI<0b1000101000, "adds $Rd, $Ra, $imm", []>;
+
+def SUBSrrr : RRR<0b1000101001, "subs $Rd, $Ra, $Rb", []>;
+def SUBSrri : RRI<0b1000101001, "subs $Rd, $Ra, $imm", []>;
+
+def SHLSrrr : RRR<0b1000101010, "shls $Rd, $Ra, $Rb", []>;
+def SHLSrri : RRI<0b1000101010, "shls $Rd, $Ra, $imm", []>;
+
+def CLAMP16r_r : R_R<0b1000101011, "clamp16 $Rd, $Rb", []>;
+def CLAMP16r_i : R_I<0b1000101011, "clamp16 $Rd, $imm", []>;
+
+def COUNTr_r : R_R<0b1000110000, "count $Rd, $Rb", []>;
+def COUNTr_i : R_I<0b1000110000, "count $Rd, $imm", []>;
+
+// Additional Addscale opcodes
+def ADDSCALE_5rrr : RRR<0b1000101100, "addscale $Rd, $Ra, $Rb shl 5",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 5)))]>;
+def ADDSCALE_6rrr : RRR<0b1000101101, "addscale $Rd, $Ra, $Rb shl 6",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 6)))]>;
+def ADDSCALE_7rrr : RRR<0b1000101110, "addscale $Rd, $Ra, $Rb shl 7",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 7)))]>;
+def ADDSCALE_8rrr : RRR<0b1000101111, "addscale $Rd, $Ra, $Rb shl 8",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 8)))]>;
+
+def ADDSCALE_5rri : RRI<0b1000101100, "addscale $Rd, $Ra, $imm shl 5",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl immS6:$imm, 5)))]>;
+def ADDSCALE_6rri : RRI<0b1000101101, "addscale $Rd, $Ra, $imm shl 6",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl immS6:$imm, 6)))]>;
+def ADDSCALE_7rri : RRI<0b1000101110, "addscale $Rd, $Ra, $imm shl 7",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl immS6:$imm, 7)))]>;
+def ADDSCALE_8rri : RRI<0b1000101111, "addscale $Rd, $Ra, $imm shl 8",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl immS6:$imm, 8)))]>;
+
+// Subscale opcodes
+def SUBSCALE_1rrr : RRR<0b1000110001, "subscale $Rd, $Ra, $Rb shl 1",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 1)))]>;
+def SUBSCALE_2rrr : RRR<0b1000110010, "subscale $Rd, $Ra, $Rb shl 2",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 2)))]>;
+def SUBSCALE_3rrr : RRR<0b1000110011, "subscale $Rd, $Ra, $Rb shl 3",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 3)))]>;
+def SUBSCALE_4rrr : RRR<0b1000110100, "subscale $Rd, $Ra, $Rb shl 4",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 4)))]>;
+def SUBSCALE_5rrr : RRR<0b1000110101, "subscale $Rd, $Ra, $Rb shl 5",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 5)))]>;
+def SUBSCALE_6rrr : RRR<0b1000110110, "subscale $Rd, $Ra, $Rb shl 6",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 6)))]>;
+def SUBSCALE_7rrr : RRR<0b1000110111, "subscale $Rd, $Ra, $Rb shl 7",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 7)))]>;
+def SUBSCALE_8rrr : RRR<0b1000111000, "subscale $Rd, $Ra, $Rb shl 8",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 8)))]>;
+
+def SUBSCALE_1rri : RRI<0b1000110001, "subscale $Rd, $Ra, $imm shl 1",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 1)))]>;
+def SUBSCALE_2rri : RRI<0b1000110010, "subscale $Rd, $Ra, $imm shl 2",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 2)))]>;
+def SUBSCALE_3rri : RRI<0b1000110011, "subscale $Rd, $Ra, $imm shl 3",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 3)))]>;
+def SUBSCALE_4rri : RRI<0b1000110100, "subscale $Rd, $Ra, $imm shl 4",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 4)))]>;
+def SUBSCALE_5rri : RRI<0b1000110101, "subscale $Rd, $Ra, $imm shl 5",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 5)))]>;
+def SUBSCALE_6rri : RRI<0b1000110110, "subscale $Rd, $Ra, $imm shl 6",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 6)))]>;
+def SUBSCALE_7rri : RRI<0b1000110111, "subscale $Rd, $Ra, $imm shl 7",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 7)))]>;
+def SUBSCALE_8rri : RRI<0b1000111000, "subscale $Rd, $Ra, $imm shl 8",
+        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 8)))]>;
+
 
 
 
