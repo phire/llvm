@@ -69,6 +69,8 @@ static void printExpr(const MCExpr *Expr, raw_ostream &OS) {
 
 void VideocoreInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
                                    raw_ostream &O) {
+  assert(MI->getNumOperands() <= OpNo && "Not enough operands");
+  	
   const MCOperand &Op = MI->getOperand(OpNo);
   if (Op.isReg()) {
     printRegName(O, Op.getReg());

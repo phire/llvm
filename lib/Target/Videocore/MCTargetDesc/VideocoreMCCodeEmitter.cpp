@@ -86,7 +86,7 @@ void VideocoreMCCodeEmitter::
 EncodeInstruction(const MCInst &MI, raw_ostream &OS,
                   SmallVectorImpl<MCFixup> &Fixups) const
 {
-  uint32_t Binary = getBinaryCodeForInstr(MI, Fixups);
+  uint64_t Binary = getBinaryCodeForInstr(MI, Fixups);
 
   // Check for unimplemented opcodes.
   unsigned Opcode = MI.getOpcode();
