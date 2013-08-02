@@ -78,12 +78,26 @@ static DecodeStatus DecodeIntRegRegisterClass(MCInst &Inst,
                                                  unsigned RegNo,
                                                  uint64_t Address,
                                                  const void *Decoder) {
-  if (RegNo > 31)
+  if (RegNo > 30)
     return MCDisassembler::Fail;
 
   const VideocoreDisassembler *Dis = static_cast<const VideocoreDisassembler*>(Decoder);
 
   unsigned Reg = Dis->getReg(VC::IntRegRegClassID, RegNo);
+  Inst.addOperand(MCOperand::CreateReg(Reg));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus DecodeAllRegRegisterClass(MCInst &Inst,
+                                                 unsigned RegNo,
+                                                 uint64_t Address,
+                                                 const void *Decoder) {
+  if (RegNo > 31)
+    return MCDisassembler::Fail;
+
+  const VideocoreDisassembler *Dis = static_cast<const VideocoreDisassembler*>(Decoder);
+
+  unsigned Reg = Dis->getReg(VC::AllRegRegClassID, RegNo);
   Inst.addOperand(MCOperand::CreateReg(Reg));
   return MCDisassembler::Success;
 }
