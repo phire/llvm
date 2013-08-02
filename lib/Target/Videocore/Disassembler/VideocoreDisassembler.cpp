@@ -132,7 +132,7 @@ static DecodeStatus readInstruction(const MemoryObject &region,
                                       uint64_t &size,
                                       uint64_t &insn) {
   uint8_t bytes[4];
-  size = 0;
+  size = 2; // if we are going to fail, we need to eat at least 2 bytes
 
   // Read the frist 16 bytes, to determin the length of the instruction
   if (region.readBytes(address, 2, (uint8_t*)bytes, NULL) == -1) {
@@ -140,12 +140,12 @@ static DecodeStatus readInstruction(const MemoryObject &region,
   }
   uint16_t word = bytes[0] | bytes[1] << 8;
 
-  if (!(word & 0x8000)) { // 0xxx xxxx xxxx xxxx - 16 bits
+  if ((word & 0x8000) == 0x0000) { // 0xxx xxxx xxxx xxxx - 16 bits
     insn = word;
     size = 2;
     return MCDisassembler::Success;
   }
-  if ((word & 0xc000) == 0x8000) { // 10xx xxxx xxxx xxxx - 32 bits
+  if ((word & 0xa000) == 0x8000) { // 1x0x xxxx xxxx xxxx - 32 bits
     if (region.readBytes(address+2, 2, (uint8_t*)bytes, NULL) != -1) {
       insn = (uint32_t)(word << 16 | bytes[1] << 8 | bytes[0]);
       size = 4;
@@ -162,6 +162,7 @@ static DecodeStatus readInstruction(const MemoryObject &region,
   }
   if ((word & 0xf000) == 0xf000) { // 1111 xxxx xxxx xxxx - vector 48/80 bits
     // Vector instruction
+    size = (word & 0x01000) ? 10 : 6;
     return MCDisassembler::Fail; // Unimplemented
   }
 
