@@ -310,19 +310,19 @@ ParseInstruction(ParseInstructionInfo &Info, StringRef Name, SMLoc NameLoc,
       }
     }
 
-    if (Name == "addscale") { // Tailing modifiers, like "shl 1"
+    //if (Name == "addscale") { // Tailing modifiers, like "shl 1"
       while(getLexer().isNot(AsmToken::EndOfStatement)) {
         SMLoc Loc = getLexer().getLoc();
         StringRef Str = getLexer().getTok().getString();
         Operands.push_back(VideocoreOperand::createToken(Str, Loc));
         Parser.Lex();
       }
-    }
-    if (getLexer().isNot(AsmToken::EndOfStatement)) {
-      SMLoc Loc = getLexer().getLoc();
-      Parser.eatToEndOfStatement();
-      return Error(Loc, "unexpected token in argument list");
-    }
+    //}
+    //if (getLexer().isNot(AsmToken::EndOfStatement)) {
+    //  SMLoc Loc = getLexer().getLoc();
+    //  Parser.eatToEndOfStatement();
+    //  return Error(Loc, "unexpected token in argument list");
+    //}
   }
 
   // Consume the EndOfStatement.

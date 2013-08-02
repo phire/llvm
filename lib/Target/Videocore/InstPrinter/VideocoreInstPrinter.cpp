@@ -116,6 +116,12 @@ void VideocoreInstPrinter::printSignedImmOperand(const MCInst *MI, int OpNo,
     O << (int)Value;
 }
 
+void VideocoreInstPrinter::printSignedShl2Operand(const MCInst *MI, int OpNo,
+                                               raw_ostream &O) {
+    unsigned int Value = MI->getOperand(OpNo).getImm();
+    O << ((int)Value << 2);
+}
+
 void VideocoreInstPrinter::printU32ImmOperand(const MCInst *MI, int OpNo,
                                                raw_ostream &O) {
     unsigned int Value = MI->getOperand(OpNo).getImm();

@@ -119,6 +119,10 @@ def immU32opnd : Operand<i32> {
       let PrintMethod = "printU32ImmOperand";
 }
 
+def immSignedShl2 : Operand<i32> {
+  let PrintMethod = "printSignedShl2Operand";
+}
+
 def cond_code_asmoperand : AsmOperandClass {
   let Name = "CondCode";
   let DiagnosticType = "CondCode";
@@ -483,6 +487,84 @@ let isMoveImm=1 in {
 // 1 - CMN
 
 defm ADD  : ArithLogicO3<2, "add", add>;
+
+// There are a few extra add instructions
+
+// add Rd, Rs, imm32
+// 1110 11ss sssd dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu
+def ADDrri48 : InstVC48<(outs IntReg:$Rd), (ins IntReg:$Rs, immU32opnd:$imm),
+        "add $Rd, $Rs, $imm",
+        [(set IntReg:$Rd, (add IntReg:$Rs, immU32:$imm))]> {
+  bits<5> Rd;
+  bits<5> Rs;
+  bits<32> imm;
+  let Inst{47-42} = 0b111011;
+  let Inst{41-37} = Rs;
+  let Inst{36-32} = Rd;
+  let Inst{31-0} = imm;
+}
+
+// 0001 0ooo oood dddd   -   add Rd, sp, immS6*4
+def ADDrSPi : InstVC16<(outs IntReg:$Rd), (ins immSignedShl2:$imm),
+        "add $Rd, sp, $imm",
+        [(set IntReg:$Rd, (add SP, (shl immS6:$imm, 2)))]> {
+  bits<5> Rd;
+  bits<6> imm;
+  let Inst{15-11} = 2;
+  let Inst{10-5} = imm;
+  let Inst{4-0} = Rd;
+
+  let Uses = [SP];
+}
+
+// 1011 01ss sssd dddd iiii iiii iiii iiii 
+// Also does pc reltive lea
+def ADDrri16 : InstVC32<(outs IntReg:$Rd), (ins AllReg:$Rs, immS16opnd:$imm),
+        "add $Rd, $Rs, $imm",
+        [(set IntReg:$Rd, (add AllReg:$Rs, (i32 immS16:$imm)))]> {
+  bits<5> Rd;
+  bits<5> Rs;
+  bits<16> imm;
+  let Inst{31-26} = 0b101101;
+  let Inst{25-21} = Rs;
+  let Inst{20-16} = Rd;
+  let Inst{15-0} = imm;
+}
+
+// 1110 0101 000d dddd oooo oooo oooo oooo oooo oooo oooo oooo
+// AKA lea
+def ADDrPCi48 : InstVC48<(outs IntReg:$Rd), (ins immU32opnd:$imm),
+        "add $Rd, pc, $imm",
+        [(set IntReg:$Rd, (add PC, (i32 immU32:$imm)))]> {
+  bits<5> Rd;
+  bits<32> imm;
+  let Inst{47-37} = 0b11100101000;
+  let Inst{36-32} = Rd;
+  let Inst{31-0} = imm;
+
+  let Uses = [PC];
+}
+
+// 1100 0101 111d dddd aaaa accc c00b bbbb  -  addcc rd, ra, rb shl 8"
+// TODO: Are there more of these?
+def ADDrrrShl8 : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, IntReg:$Rb),
+        "add $Rd, $Ra, $Rb shl 8",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 8)))]> {
+  bits<5> Rd;
+  bits<5> Ra;
+  bits<5> Rb;
+  bits<4> Cond;
+  let Inst{31-21} = 0b11000101111;
+  let Inst{20-16} = Rd;
+  let Inst{15-11} = Ra;
+  let Inst{10-7} = Cond;
+  let Inst{6-5} = 0;
+  let Inst{4-0} = Rd;
+
+  let isPredicable=1;
+}
+
+
 
 let Constraints="$src = $Rd", DisableEncoding="$src" in {
   let isConvertibleToThreeAddress = 1 in
