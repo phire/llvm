@@ -69,7 +69,7 @@ static void printExpr(const MCExpr *Expr, raw_ostream &OS) {
 
 void VideocoreInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
                                    raw_ostream &O) {
-  assert(MI->getNumOperands() <= OpNo && "Not enough operands");
+  assert(OpNo < MI->getNumOperands() && "Not enough operands");
   	
   const MCOperand &Op = MI->getOperand(OpNo);
   if (Op.isReg()) {
@@ -101,6 +101,14 @@ void VideocoreInstPrinter::printU5ImmOperand(const MCInst *MI, int OpNo,
     assert(Value <= 31 && "Invalid u5imm argument!");
     O << (unsigned int)Value;
 }
+
+void VideocoreInstPrinter::printU6ImmOperand(const MCInst *MI, int OpNo,
+                                               raw_ostream &O) {
+    unsigned int Value = MI->getOperand(OpNo).getImm();
+    assert(Value <= 63 && "Invalid u6imm argument!");
+    O << (unsigned int)Value;
+}
+
 
 void VideocoreInstPrinter::printSignedImmOperand(const MCInst *MI, int OpNo,
                                                raw_ostream &O) {

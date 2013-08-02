@@ -354,17 +354,10 @@ parseOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands,
     Error(Parser.getTok().getLoc(), "unexpected token in operand");
     return true;
   case AsmToken::Identifier: {
-    // If we've seen a branch mnemonic, the next operand must be a label.  This
-    // is true even if the label is a register name.  So "br r1" means branch to
-    // label "r1".
-    bool ExpectLabel = Mnemonic == "b" || Mnemonic == "bl";
-    if (!ExpectLabel) {
-      if (!tryParseRegisterWithWriteBack(Operands))
-        return false;
-    }
+    if (!tryParseRegisterWithWriteBack(Operands))
+      return false;
 
-    // Fall though for the Identifier case that is not a register or a
-    // special name.
+    // Fall though for the Identifier case that is not a register
   }
   //case AsmToken::LParen:  // parenthesized expressions like (_strcmp-4)
   case AsmToken::Integer: // immediates
