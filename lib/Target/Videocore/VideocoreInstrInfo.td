@@ -580,7 +580,26 @@ def BMASKrri : ArithLogicRRI<14, (ins IntReg:$Rs, immS6opnd:$imm),
 		"bmask $Rd, $Rs, $imm",
         [(set IntReg:$Rd, (and IntReg:$Rs, MASKi:$imm))]>;
 
-// 15 - MAX
+// MAX -- FIXME: no codegen
+let Constraints="$src = $Rd", DisableEncoding="$src" in {
+  let isConvertibleToThreeAddress = 1 in
+  def MAXqq : ArithLogicQQ<15, (ins LowReg:$src, LowReg:$Rs), 
+		"max $Rd, $Rs",
+        []>;
+  def MAXri : ArithLogicRI<15, (ins IntReg:$src, immS16opnd:$imm), 
+		"max $Rd, $imm",
+		[]>;
+  def MAXi48 : ArithLogic48<15, (ins IntReg:$src, immU32opnd:$imm),
+		"max $Rd, $imm",
+		[]>;
+}
+def MAXrr : ArithLogicRRR<15, (ins IntReg:$Ra, IntReg:$Rb),
+		"max $Rd, $Ra, $Rb",
+        []>;
+def MAXrri : ArithLogicRRI<15, (ins IntReg:$Rs, immS6opnd:$imm),
+		"max $Rd, $Rs, $imm",
+        []>;
+
 
 let Constraints="$src = $Rd", DisableEncoding="$src" in {
   let isConvertibleToThreeAddress = 1 in {
@@ -605,7 +624,26 @@ def BSETrri : ArithLogicRRI<16, (ins IntReg:$Rs, immS6opnd:$imm),
 		"bset $Rd, $Rs, $imm",
 		[(set IntReg:$Rd, (and IntReg:$Rs, BITi:$imm))]>;
 
-// 17 - MIN
+// MIN -- FIXME: no codegen
+let Constraints="$src = $Rd", DisableEncoding="$src" in {
+  let isConvertibleToThreeAddress = 1 in
+  def MINqq : ArithLogicQQ<17, (ins LowReg:$src, LowReg:$Rs), 
+		"min $Rd, $Rs",
+        []>;
+  def MINri : ArithLogicRI<17, (ins IntReg:$src, immS16opnd:$imm), 
+		"min $Rd, $imm",
+		[]>;
+  def MINi48 : ArithLogic48<17, (ins IntReg:$src, immU32opnd:$imm),
+		"min $Rd, $imm",
+		[]>;
+}
+def MINrr : ArithLogicRRR<17, (ins IntReg:$Ra, IntReg:$Rb),
+		"min $Rd, $Ra, $Rb",
+        []>;
+def MINrri : ArithLogicRRI<17, (ins IntReg:$Rs, immS6opnd:$imm),
+		"min $Rd, $Rs, $imm",
+        []>;
+
 
 let Constraints="$src = $Rd", DisableEncoding="$src" in {
   let isConvertibleToThreeAddress = 1 in {
@@ -669,20 +707,106 @@ def ADDSCALE_3qi : ArithLogicQI<22, (ins LowReg:$src, immS16opnd:$imm),
 
 defm ADDSCALE_4 : AddScale<23, 4>;
 
-// 24 - SIGNEXT
-// 25 - NEG
+// SIGNEXT -- FIXME: no codegen
+let Constraints="$src = $Rd", DisableEncoding="$src" in {
+  let isConvertibleToThreeAddress = 1 in
+  def SIGNEXTqq : ArithLogicQQ<24, (ins LowReg:$src, LowReg:$Rs), 
+		"signext $Rd, $Rs",
+        []>;
+  def SIGNEXTri : ArithLogicRI<24, (ins IntReg:$src, immS16opnd:$imm), 
+		"signext $Rd, $imm",
+		[]>;
+  def SIGNEXTi48 : ArithLogic48<24, (ins IntReg:$src, immU32opnd:$imm),
+		"signext $Rd, $imm",
+		[]>;
+}
+def SIGNEXTrr : ArithLogicRRR<24, (ins IntReg:$Ra, IntReg:$Rb),
+		"signext $Rd, $Ra, $Rb",
+        []>;
+def SIGNEXTrri : ArithLogicRRI<24, (ins IntReg:$Rs, immS6opnd:$imm),
+		"signext $Rd, $Rs, $imm",
+        []>;
+
+// Negate
+def NEGqq : ArithLogicQQ<25, (ins LowReg:$Rs), "neg $Rd, $Rs",
+		[(set LowReg:$Rd, (sub 0, LowReg:$Rs))]>;
+def NEGrr : ArithLogicRR<25, (ins IntReg:$Ra), "neg $Rd, $Ra",
+		[(set IntReg:$Rd, (sub 0, IntReg:$Ra))]>;
+def NEGqi : ArithLogicQI<25, (ins immU5opnd:$imm), "neg $Rd, $imm",
+		[(set LowReg:$Rd, (sub 0, (i32 immU5:$imm)))]>;
+def NEGri : ArithLogicRI<25, (ins immS16opnd:$imm), "neg $Rd, $imm",
+		[(set IntReg:$Rd, (sub 0, (i32 immS16:$imm)))]>;
+def NEGrri : ArithLogicRRI<25, (ins immS6opnd:$imm), "neg $Rd, $imm",
+		[(set IntReg:$Rd, (sub 0, (i32 immS6:$imm)))]>;
+def NEGi48 : ArithLogic48<25, (ins immU32opnd:$imm), "neg $Rd, $imm",
+		[(set IntReg:$Rd, (sub 0, (i32 immU32:$imm)))]>;
 
 defm LSR  : ArithLogicE3<26, "lsr", srl>;
 
-// 27 - MSB
+// MSB -- FIXME: no codegen
+let Constraints="$src = $Rd", DisableEncoding="$src" in {
+  let isConvertibleToThreeAddress = 1 in
+  def MSBqq : ArithLogicQQ<27, (ins LowReg:$src, LowReg:$Rs), 
+		"msb $Rd, $Rs",
+        []>;
+  def MSBri : ArithLogicRI<27, (ins IntReg:$src, immS16opnd:$imm), 
+		"msb $Rd, $imm",
+		[]>;
+  def MSBi48 : ArithLogic48<27, (ins IntReg:$src, immU32opnd:$imm),
+		"msb $Rd, $imm",
+		[]>;
+}
+def MSBrr : ArithLogicRRR<27, (ins IntReg:$Ra, IntReg:$Rb),
+		"msb $Rd, $Ra, $Rb",
+        []>;
+def MSBrri : ArithLogicRRI<27, (ins IntReg:$Rs, immS6opnd:$imm),
+		"msb $Rd, $Rs, $imm",
+        []>;
+
 
 defm SHL  : ArithLogicE3<28, "shl", shl>;
 
-// 29 - BITREV
+// BITREV -- FIXME: no codegen
+let Constraints="$src = $Rd", DisableEncoding="$src" in {
+  let isConvertibleToThreeAddress = 1 in
+  def BITREVqq : ArithLogicQQ<29, (ins LowReg:$src, LowReg:$Rs), 
+		"bitrev $Rd, $Rs",
+        []>;
+  def BITREVri : ArithLogicRI<29, (ins IntReg:$src, immS16opnd:$imm), 
+		"bitrev $Rd, $imm",
+		[]>;
+  def BITREVi48 : ArithLogic48<29, (ins IntReg:$src, immU32opnd:$imm),
+		"bitrev $Rd, $imm",
+		[]>;
+}
+def BITREVrr : ArithLogicRRR<29, (ins IntReg:$Ra, IntReg:$Rb),
+		"bitrev $Rd, $Ra, $Rb",
+        []>;
+def BITREVrri : ArithLogicRRI<29, (ins IntReg:$Rs, immS6opnd:$imm),
+		"bitrev $Rd, $Rs, $imm",
+        []>;
 
 defm ASR  : ArithLogicE3<30, "asr", sra>;
 
-// 31 - ABS
+// ASB -- FIXME: no codegen
+let Constraints="$src = $Rd", DisableEncoding="$src" in {
+  let isConvertibleToThreeAddress = 1 in
+  def ASBqq : ArithLogicQQ<31, (ins LowReg:$src, LowReg:$Rs), 
+		"asb $Rd, $Rs",
+        []>;
+  def ASBri : ArithLogicRI<31, (ins IntReg:$src, immS16opnd:$imm), 
+		"asb $Rd, $imm",
+		[]>;
+  def ASBi48 : ArithLogic48<31, (ins IntReg:$src, immU32opnd:$imm),
+		"asb $Rd, $imm",
+		[]>;
+}
+def ASBrr : ArithLogicRRR<31, (ins IntReg:$Ra, IntReg:$Rb),
+		"asb $Rd, $Ra, $Rb",
+        []>;
+def ASBrri : ArithLogicRRI<31, (ins IntReg:$Rs, immS6opnd:$imm),
+		"asb $Rd, $Rs, $imm",
+        []>;
 
 
 
