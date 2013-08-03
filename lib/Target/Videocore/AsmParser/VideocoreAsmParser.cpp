@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "MCTargetDesc/VideocoreMCTargetDesc.h"
+#include "MCTargetDesc/VideocoreBaseInfo.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
@@ -41,7 +42,8 @@ private:
     KindReg,
     KindAccessReg,
     KindImm,
-    KindMem
+    KindMem,
+    KindCondCode
   };
 
   OperandKind Kind;
@@ -64,6 +66,7 @@ private:
     RegOp Reg;
     unsigned AccessReg;
     const MCExpr *Imm;
+    int CondCode;
   };
 
   VideocoreOperand(OperandKind kind, SMLoc startLoc, SMLoc endLoc)
@@ -102,6 +105,13 @@ public:
     Op->Imm = Expr;
     return Op;
   }
+
+  static VideocoreOperand *createCondCode(int code, SMLoc StartLoc,
+                                   SMLoc EndLoc) {
+    VideocoreOperand *Op = new VideocoreOperand(KindCondCode, StartLoc, EndLoc);
+    Op->CondCode = code;
+    return Op;
+  }
   
   // Token operands
   virtual bool isToken() const LLVM_OVERRIDE {
@@ -120,7 +130,6 @@ public:
     return Kind == KindReg && Reg.Kind == RegKind;
   }*/
   virtual unsigned getReg() const LLVM_OVERRIDE {
-    assert(Kind == KindReg && "Not a register");
     return Reg.Num;
   }
 
@@ -137,7 +146,7 @@ public:
   }
 
   virtual bool isCondCode() const {
-    return true; // TODO: implement this
+    return Kind == KindCondCode;
   }
 
   // Memory operands.
@@ -163,7 +172,7 @@ public:
   }
   void addCondCodeOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands");
-    // TODO: do something here
+    Inst.addOperand(MCOperand::CreateImm(CondCode));
   }
 
 };
@@ -186,6 +195,9 @@ private:
 
   bool parseOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands,
                     StringRef Mnemonic);
+  StringRef splitMnemonic(StringRef Mnemonic, unsigned &CondCode, StringRef &Postfix);
+  bool InstructionIsConditional(StringRef Mnemonic, int numOperands,
+                             SmallVectorImpl<MCParsedAsmOperand*> &Operands);
 
 public:
   enum VideocoreMatchResultTy {
@@ -288,41 +300,170 @@ tryParseRegisterWithWriteBack(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
   return false;
 }
 
+/// \brief Given a mnemonic, split out possible predication code and carry
+/// setting letters to form a canonical mnemonic and flags.
+//
+// FIXME: Would be nice to autogen this.
+// FIXME: This is a bit of a maze of special cases.
+StringRef VideocoreAsmParser::splitMnemonic(StringRef Mnemonic, 
+                                     unsigned &CondCode, StringRef &Postfix) {
+  // Instruction postfix, ie: div.ss
+  Postfix = Mnemonic.split('.').second;
+  Mnemonic = Mnemonic.split('.').first;
+  
+  CondCode = VCCC::AL;
+  // Ignore some mnemonics we know aren't predicated forms.
+  //
+  // FIXME: Would be nice to autogen this.
+  if (Mnemonic == "vcmpge" || Mnemonic == "vmuls")
+      return Mnemonic;
+
+  unsigned CC = StringSwitch<unsigned>(Mnemonic.substr(Mnemonic.size()-2))
+    .Case("eq", VCCC::EQ)
+    .Case("ne", VCCC::NE)
+    .Case("hs", VCCC::HS)
+    .Case("cc", VCCC::HS)
+    .Case("lo", VCCC::LO)
+    .Case("cs", VCCC::LO)
+    .Case("mi", VCCC::MI)
+    .Case("pl", VCCC::PL)
+    .Case("vs", VCCC::VS)
+    .Case("vc", VCCC::VC)
+    .Case("hi", VCCC::HI)
+    .Case("ls", VCCC::LS)
+    .Case("ge", VCCC::GE)
+    .Case("lt", VCCC::LT)
+    .Case("gt", VCCC::GT)
+    .Case("le", VCCC::LE)
+    .Case("al", VCCC::AL)
+    .Default(~0U);
+  if (CC != ~0U) {
+    Mnemonic = Mnemonic.slice(0, Mnemonic.size() - 2);
+    CondCode = CC;
+  }
+
+  return Mnemonic;
+}
+
+/// \brief Based on the Mnemonic and number of operands, is this
+/// instruction conditional?
+//
+// FIXME: Would be nice to autogen this.
+// FIXME: This is a bit of a maze of special cases.
+// FIXME: Doesn't cover load/stores
+bool VideocoreAsmParser::
+InstructionIsConditional(StringRef Mnemonic, int numOperands, 
+                         SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
+  switch(numOperands) {
+  case 1:
+    return (Mnemonic == "b" && !Operands[1]->isReg());
+  case 2:
+    return StringSwitch<bool>(Mnemonic)
+      .Case("mov", true)
+      .Case("cmn", true)
+      .Case("cmp", true)
+      .Case("btst", true)
+      .Case("not", true)
+      .Case("neg", true)
+      .Case("msb", true)
+      .Case("asb", true)
+      .Case("clamp16", true)
+      .Case("count", true)
+      .Default(false);
+  case 3:
+    return StringSwitch<bool>(Mnemonic)
+      .Case("add", true)
+      .Case("bic", true)
+      .Case("mul", true)
+      .Case("xor", true)
+      .Case("sub", true)
+      .Case("and", true)
+      .Case("not", true)
+      .Case("ror", true)
+      .Case("rsub", true)
+      .Case("or", true)
+      .Case("bmask", true)
+      .Case("max", true)
+      .Case("bset", true)
+      .Case("min", true)
+      .Case("bclr", true)
+      .Case("bchg", true)
+      .Case("signext", true)
+      .Case("lsr", true)
+      .Case("shl", true)
+      .Case("bitrev", true)
+      .Case("asr", true)
+      .Case("mulhd", true)
+      .Case("div", true)
+      .Case("adds", true)
+      .Case("subs", true)
+      .Case("shls", true)
+      .Case("addscale", true)
+      .Case("subscale", true)
+      .Default(false);
+  case 4:
+    return (Mnemonic == "addcmpb");
+  }
+  return false;
+}
+
+
 bool VideocoreAsmParser::
 ParseInstruction(ParseInstructionInfo &Info, StringRef Name, SMLoc NameLoc,
-                 SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
-  Operands.push_back(VideocoreOperand::createToken(Name, NameLoc));
+                 SmallVectorImpl<MCParsedAsmOperand*> &Operands) { 
+  unsigned CondCode;
+  StringRef Postfix;
 
+  StringRef Mnemonic = splitMnemonic(Name, CondCode, Postfix);
+  Operands.push_back(VideocoreOperand::createToken(Mnemonic, NameLoc));
+
+  
+  if(Postfix != "") {
+    Postfix = "." + Postfix.str();
+    Operands.push_back(VideocoreOperand::createToken(Postfix, NameLoc));
+  }
+
+  int numOperands = 0;
   // Read the remaining operands.
   if (getLexer().isNot(AsmToken::EndOfStatement)) {
     // Read the first operand.
-    if (parseOperand(Operands, Name)) {
+    if (parseOperand(Operands, Mnemonic)) {
       Parser.eatToEndOfStatement();
       return true;
     }
+    numOperands++;
 
     // Read any subsequent operands.
     while (getLexer().is(AsmToken::Comma)) {
       Parser.Lex();
-      if (parseOperand(Operands, Name)) {
+      if (parseOperand(Operands, Mnemonic)) {
         Parser.eatToEndOfStatement();
         return true;
       }
+      numOperands++;
     }
 
-    //if (Name == "addscale") { // Tailing modifiers, like "shl 1"
-      while(getLexer().isNot(AsmToken::EndOfStatement)) {
-        SMLoc Loc = getLexer().getLoc();
-        StringRef Str = getLexer().getTok().getString();
-        Operands.push_back(VideocoreOperand::createToken(Str, Loc));
-        Parser.Lex();
-      }
-    //}
-    //if (getLexer().isNot(AsmToken::EndOfStatement)) {
-    //  SMLoc Loc = getLexer().getLoc();
-    //  Parser.eatToEndOfStatement();
-    //  return Error(Loc, "unexpected token in argument list");
-    //}
+    // Tailing modifiers, like "shl 1"
+    while(getLexer().isNot(AsmToken::EndOfStatement)) {
+      SMLoc Loc = getLexer().getLoc();
+      StringRef Str = getLexer().getTok().getString();
+      Operands.push_back(VideocoreOperand::createToken(Str, Loc));
+      Parser.Lex();
+    }
+   }
+
+  if(InstructionIsConditional(Mnemonic, numOperands, Operands)) {
+    // The condition code needs to be the second operand, But we don't 
+    // know if we need it until we know how many operands we have.
+    SMLoc S = SMLoc::getFromPointer(NameLoc.getPointer() + Mnemonic.size());
+    SMLoc E = SMLoc::getFromPointer(NameLoc.getPointer() + Name.size());
+
+    Operands.insert(Operands.begin()+1, 
+                    VideocoreOperand::createCondCode(CondCode, S, E));
+  } else if(CondCode != VCCC::AL) {
+    SMLoc Loc = SMLoc::getFromPointer(NameLoc.getPointer() + Mnemonic.size());
+    Error(Loc, "Unexpected Condition Code");
+    return true;
   }
 
   // Consume the EndOfStatement.
@@ -456,6 +597,9 @@ MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
 
   case Match_MnemonicFail:
     return Error(IDLoc, "invalid instruction");
+
+  case Match_CondCode:
+    return Error(IDLoc, "expected a condition code");
   }
 
   llvm_unreachable("Unexpected match type");
