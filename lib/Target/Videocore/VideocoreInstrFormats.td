@@ -67,7 +67,8 @@ class LEA16_sp<bit ld_st, dag outs, dag ins, string asmstr, list<dag> pattern>
 }
 
 class RRR<bits<10> op, string asmstr, list<dag> pattern>
-   : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, IntReg:$Rb), asmstr, pattern> {
+   : InstVC32<(outs IntReg:$Rd), 
+     (ins IntReg:$Ra, IntReg:$Rb, cond_code:$Cond), asmstr, pattern> {
   bits<5> Rd;
   bits<5> Ra;
   bits<5> Rb;
@@ -85,7 +86,7 @@ class RRR<bits<10> op, string asmstr, list<dag> pattern>
 }
 
 class R_R<bits<10> op, string asmstr, list<dag> pattern>
-   : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Rb), asmstr, pattern> {
+   : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Rb, cond_code:$Cond), asmstr, pattern> {
   bits<5> Rd;
   bits<5> Rb;
   bits<4> Cond;
@@ -103,7 +104,8 @@ class R_R<bits<10> op, string asmstr, list<dag> pattern>
 
 
 class RRI<bits<10> op, string asmstr, list<dag> pattern>
-   : InstVC32<(outs IntReg:$Rd), (ins IntReg:$Ra, immS6opnd:$imm), asmstr, pattern> {
+   : InstVC32<(outs IntReg:$Rd), 
+     (ins cond_code:$Cond, IntReg:$Ra, immS6opnd:$imm), asmstr, pattern> {
   bits<5> Rd;
   bits<5> Ra;
   bits<6> imm;
@@ -121,7 +123,7 @@ class RRI<bits<10> op, string asmstr, list<dag> pattern>
 }
 
 class R_I<bits<10> op, string asmstr, list<dag> pattern>
-   : InstVC32<(outs IntReg:$Rd), (ins immS6opnd:$imm), asmstr, pattern> {
+   : InstVC32<(outs IntReg:$Rd), (ins immS6opnd:$imm, cond_code:$Cond), asmstr, pattern> {
   bits<5> Rd;
   bits<6> imm;
   bits<4> Cond;
@@ -156,12 +158,13 @@ class ArithLogicRR<bits<5> op, dag ins, string asmstr, list<dag> pattern>
    : InstVC32<(outs IntReg:$Rd), ins, asmstr, pattern> {
   bits<5> Rd;
   bits<5> Ra;
+  bits<4> Cond;
 
   let Inst{31-26} = 0x30;
   let Inst{25-21} = op;
   let Inst{20-16} = Rd;
   let Inst{15-11} = Ra;
-  let Inst{10-7 } = 0xe;
+  let Inst{10-7 } = Cond;
   let Inst{6-5} = 0;
   let Inst{4-0} = 0;
 }
@@ -171,14 +174,17 @@ class ArithLogicRRR<bits<5> op, dag ins, string asmstr, list<dag> pattern>
   bits<5> Rd;
   bits<5> Ra;
   bits<5> Rb;
+  bits<4> Cond;
 
   let Inst{31-26} = 0x30;
   let Inst{25-21} = op;
   let Inst{20-16} = Rd;
   let Inst{15-11} = Ra;
-  let Inst{10-7 } = 0xe;
+  let Inst{10-7 } = Cond;
   let Inst{6-5} = 0;
   let Inst{4-0} = Rb;
+
+  let isPredicable = 1;
 }
 
 class ArithLogicQI<bits<5> op, dag ins, string asmstr, list<dag> pattern>

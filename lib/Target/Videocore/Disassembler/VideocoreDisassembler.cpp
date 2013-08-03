@@ -145,7 +145,7 @@ static DecodeStatus readInstruction(const MemoryObject &region,
     size = 2;
     return MCDisassembler::Success;
   }
-  if ((word & 0xa000) == 0x8000) { // 1x0x xxxx xxxx xxxx - 32 bits
+  if ((word & 0xf000) != 0xe000) { // 1xxx xxxx xxxx xxxx - 32 bits (excluding below)
     if (region.readBytes(address+2, 2, (uint8_t*)bytes, NULL) != -1) {
       insn = (uint32_t)(word << 16 | bytes[1] << 8 | bytes[0]);
       size = 4;
