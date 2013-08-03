@@ -66,20 +66,20 @@ class LEA16_sp<bit ld_st, dag outs, dag ins, string asmstr, list<dag> pattern>
   let Inst{4-0} = Rd;
 }
 
-class _R__<bits<10> op, dag ins, string asmstr, list<dag> pattern>
+class _R__<bits<12> op, dag ins, string asmstr, list<dag> pattern>
    : InstVC32<(outs IntReg:$Rd), ins, asmstr, pattern> {
   bits<5> Rd;
   bits<4> Cond;
 
   let Inst{31} = 1;
-  let Inst{30-21} = op;
+  let Inst{30-21} = op{10-1};
   let Inst{20-16} = Rd;
   let Inst{10-7 } = Cond;
 
   let isPredicable = 1;
 }
 
-class R_R<bits<10> op, string mnemonic, list<dag> pattern>
+class R_R<bits<12> op, string mnemonic, list<dag> pattern>
    : _R__<op, (ins IntReg:$Rb, cond_code:$Cond),
                !strconcat(mnemonic, "$Cond $Rd, $Rb"), pattern> {
   bits<5> Rb;
@@ -89,7 +89,7 @@ class R_R<bits<10> op, string mnemonic, list<dag> pattern>
   let Inst{4-0} = Rb;
 }
 
-class R_I<bits<10> op, string mnemonic, list<dag> pattern>
+class R_I<bits<12> op, string mnemonic, list<dag> pattern>
    : _R__<op, (ins immS6opnd:$imm, cond_code:$Cond), 
                !strconcat(mnemonic, "$Cond $Rd, $imm"), pattern> {
   bits<6> imm;
@@ -99,7 +99,7 @@ class R_I<bits<10> op, string mnemonic, list<dag> pattern>
   let Inst{5-0} = imm;
 }
 
-class _RRR<bits<10> op, string asmstr, list<dag> pattern>
+class _RRR<bits<12> op, string asmstr, list<dag> pattern>
   : _R__<op, (ins IntReg:$Ra, IntReg:$Rb, cond_code:$Cond), asmstr, pattern> {
   bits<5> Ra;
   bits<5> Rb;
@@ -108,10 +108,10 @@ class _RRR<bits<10> op, string asmstr, list<dag> pattern>
   let Inst{6-5} = 0;
   let Inst{4-0} = Rb;
 }
-class RRR<bits<10> op, string mnemonic, list<dag> pattern> 
+class RRR<bits<12> op, string mnemonic, list<dag> pattern> 
    : _RRR<op, !strconcat(mnemonic, "$Cond $Rd, $Ra, $Rb"), pattern>;
 
-class _RRI<bits<10> op, string asmstr, list<dag> pattern>
+class _RRI<bits<12> op, string asmstr, list<dag> pattern>
   : _R__<op, (ins IntReg:$Ra, immS6opnd:$imm, cond_code:$Cond), asmstr, pattern> {
   bits<5> Ra;
   bits<6> imm;
@@ -120,7 +120,7 @@ class _RRI<bits<10> op, string asmstr, list<dag> pattern>
   let Inst{6} = 1;
   let Inst{5-0} = imm;
 }
-class RRI<bits<10> op, string mnemonic, list<dag> pattern>
+class RRI<bits<12> op, string mnemonic, list<dag> pattern>
    : _RRI<op, !strconcat(mnemonic, "$Cond $Rd, $Ra, $imm"), pattern>;
 
 
