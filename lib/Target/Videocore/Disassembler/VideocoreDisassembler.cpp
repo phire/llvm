@@ -145,7 +145,7 @@ static DecodeStatus readInstruction(const MemoryObject &region,
     size = 2;
     return MCDisassembler::Success;
   }
-  if ((word & 0xf000) != 0xe000) { // 1xxx xxxx xxxx xxxx - 32 bits (excluding below)
+  if ((word & 0xf000) < 0xe000) { // 1xxx xxxx xxxx xxxx - 32 bits (excluding below)
     if (region.readBytes(address+2, 2, (uint8_t*)bytes, NULL) != -1) {
       insn = (uint32_t)(word << 16 | bytes[1] << 8 | bytes[0]);
       size = 4;
@@ -154,7 +154,7 @@ static DecodeStatus readInstruction(const MemoryObject &region,
   }
   if ((word & 0xf000) == 0xe000) { // 1110 xxxx xxxx xxxx - 48 bits
     if (region.readBytes(address+2, 4, (uint8_t*)bytes, NULL) != -1) {
-      insn = bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0];
+      insn = ((uint64_t)bytes[3]) << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0];
       insn |= ((uint64_t)word) << 32;
       size = 6;
       return MCDisassembler::Success;
@@ -162,7 +162,7 @@ static DecodeStatus readInstruction(const MemoryObject &region,
   }
   if ((word & 0xf000) == 0xf000) { // 1111 xxxx xxxx xxxx - vector 48/80 bits
     // Vector instruction
-    size = (word & 0x01000) ? 10 : 6;
+    size = (word & 0x0800) ? 10 : 6;
     return MCDisassembler::Fail; // Unimplemented
   }
 
@@ -180,8 +180,13 @@ VideocoreDisassembler::getInstruction(MCInst &instr,
  
   DecodeStatus Result = readInstruction(Region, Address, Size, Insn);
 
-  if (Result == MCDisassembler::Fail)
+  if (Result == MCDisassembler::Fail) {
+    if(Size > 4) {
+      instr.setOpcode((Size == 10) ? VC::VECTOR80 : VC::VECTOR48);
+      return MCDisassembler::SoftFail;
+    }
     return MCDisassembler::Fail;
+  }
 
   // Calling the auto-generated decoder function.
   const uint8_t *DecodeTable;
@@ -197,7 +202,14 @@ VideocoreDisassembler::getInstruction(MCInst &instr,
     return Result;
   }
 
-  return MCDisassembler::Fail;
+  switch(Size) {
+    case 2: instr.setOpcode(VC::SCALAR16); break;
+    case 4: instr.setOpcode(VC::SCALAR32); break;
+    case 6: instr.setOpcode(VC::SCALAR48); break;
+  }
+
+
+  return MCDisassembler::SoftFail;
 }
 
 } //namespace

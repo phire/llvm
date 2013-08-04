@@ -99,6 +99,16 @@ class R_I<bits<12> op, string mnemonic, list<dag> pattern>
   let Inst{5-0} = imm;
 }
 
+class RR0<bits<12> op, string mnemonic, list<dag> pattern,
+          string asmstr=!strconcat(mnemonic, "$Cond $Rd, $Ra")>
+  : _R__<op, (ins IntReg:$Ra, cond_code:$Cond), asmstr, pattern> {
+  bits<5> Ra;
+
+  let Inst{15-11} = Ra;
+  let Inst{6-0} = 0;
+}
+
+
 class RRR<bits<12> op, string mnemonic, list<dag> pattern,
           string asmstr=!strconcat(mnemonic, "$Cond $Rd, $Ra, $Rb")>
   : _R__<op, (ins IntReg:$Ra, IntReg:$Rb, cond_code:$Cond), asmstr, pattern> {
@@ -187,7 +197,7 @@ class ArithLogicRI<bits<5> op, string asm, list<dag> pattern>
 }
 // Only one input
 class ArithLogicRI_1<bits<5> op, string asm, list<dag> pattern>
-   : _ArithLogicRI<op, (ins immU5opnd:$imm),
+   : _ArithLogicRI<op, (ins immS16opnd:$imm),
                    !strconcat(asm, " $Rd, $imm"), pattern>;
 
 
