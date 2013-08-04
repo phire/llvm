@@ -228,19 +228,12 @@ include "VideocoreInstrFormats.td"
 // Odd numbered, two input operations
 multiclass ArithLogicO3<int opc, string asmstr, SDPatternOperator node, 
                         SDPatternOperator immnode=node> {
-  let Constraints="$src = $Rd", DisableEncoding="$src" in {
-  def qq : ArithLogicQQ<opc, (ins LowReg:$src, LowReg:$Rs), 
-		!strconcat(asmstr, " $Rd, $Rs"),
-        [(set LowReg:$Rd, (node LowReg:$src, LowReg:$Rs))]> {
-            let isConvertibleToThreeAddress = 1;
-		}
-  def ri : ArithLogicRI<opc, (ins IntReg:$src, immS16opnd:$imm), 
-		!strconcat(asmstr, " $Rd, $imm"),
+  def qq : ArithLogicQQ<opc, asmstr,
+        [(set LowReg:$Rd, (node LowReg:$src, LowReg:$Rs))]>;
+  def ri : ArithLogicRI<opc, asmstr,
 		[(set IntReg:$Rd, (immnode IntReg:$src, (i32 immS16:$imm)))]>;
-  def i48 : ArithLogic48<opc, (ins IntReg:$src, immU32opnd:$imm),
-		!strconcat(asmstr, " $Rd, $imm"),
+  def i48 : ArithLogicI32<opc, asmstr,
 		[(set IntReg:$Rd, (immnode IntReg:$src, (i32 immU32:$imm)))]>;
-  }
   def rrr : RRR<!add(0xc00, !shl(opc, 1)), asmstr,
         [(set IntReg:$Rd, (node IntReg:$Ra, IntReg:$Rb))]>;
   def rri : RRI<!add(0xc00, !shl(opc, 1)), asmstr, 
@@ -249,27 +242,20 @@ multiclass ArithLogicO3<int opc, string asmstr, SDPatternOperator node,
 
 // Even numbered, two input operations
 multiclass ArithLogicE3<int opc, string asmstr, SDPatternOperator node,
-     SDPatternOperator immnode=node> : ArithLogicO3<opc, asmstr, node, immnode> {
-  let Constraints="$src = $Rd", DisableEncoding="$src" in {
-  def qi : ArithLogicQI<opc, (ins LowReg:$src, immU5opnd:$imm),
-		!strconcat(asmstr, " $Rd, $imm"),
-        [(set LowReg:$Rd, (immnode LowReg:$src, (i32 immU5:$imm)))]> {
-            let isConvertibleToThreeAddress = 1;
-		}
-  }
+                        SDPatternOperator immnode=node> 
+ : ArithLogicO3<opc, asmstr, node, immnode> {
+  def qi : ArithLogicQI<opc, asmstr,
+        [(set LowReg:$Rd, (immnode LowReg:$src, (i32 immU5:$imm)))]>;
 }
 
 // Odd numbered, one input operations
 multiclass ArithLogicO2<int opc, string asmstr, SDPatternOperator node, 
                         SDPatternOperator immnode=node> {
-  def qq : ArithLogicQQ<opc, (ins LowReg:$Rs), 
-		!strconcat(asmstr, " $Rd, $Rs"),
+  def qq : ArithLogicQQ_1<opc, asmstr,
         [(set LowReg:$Rd, (node LowReg:$Rs))]>;
-  def ri : ArithLogicRI<opc, (ins immS16opnd:$imm), 
-		!strconcat(asmstr, " $Rd, $imm"),
+  def ri : ArithLogicRI_1<opc, asmstr,
 		[(set IntReg:$Rd, (immnode (i32 immS16:$imm)))]>;
-  def i48 : ArithLogic48<opc, (ins immU32opnd:$imm),
-		!strconcat(asmstr, " $Rd, $imm"),
+  def i32 : ArithLogicI32_1<opc, asmstr,
 		[(set IntReg:$Rd, (immnode (i32 immU32:$imm)))]>;
   def r_r : R_R<!add(0xc00, !shl(opc, 1)), asmstr,
         [(set IntReg:$Rd, (node IntReg:$Rb))]>;
@@ -279,44 +265,53 @@ multiclass ArithLogicO2<int opc, string asmstr, SDPatternOperator node,
 
 // Even numbered, one input operations
 multiclass ArithLogicE2<int opc, string asmstr, SDPatternOperator node, 
-    SDPatternOperator immnode=node> : ArithLogicO2<opc, asmstr, node, immnode> {
-  def qi : ArithLogicQI<opc, (ins immU5opnd:$imm),
-		!strconcat(asmstr, " $Rd, $imm"),
+                        SDPatternOperator immnode=node> 
+ : ArithLogicO2<opc, asmstr, node, immnode> {
+  def qi : ArithLogicQI_1<opc, asmstr,
         [(set LowReg:$Rd, (immnode (i32 immU5:$imm)))]>;
 }
-
 
 // Add Scale operations
 multiclass AddScale<int opc, int shift> {
   let Constraints="$src = $Rd", DisableEncoding="$src" in {
-  def qq : ArithLogicQQ<opc, (ins LowReg:$src, LowReg:$Rs), 
+  def qq : _ArithLogicQQ<opc, (ins LowReg:$src, LowReg:$Rs), 
 		"addscale $Rd, $Rs shl "#shift,
         [(set LowReg:$Rd, (add LowReg:$src, (shl LowReg:$Rs, shift)))]> {
-            let isConvertibleToThreeAddress = 1;
-		}
-  def ri : ArithLogicRI<opc, (ins IntReg:$src, immS16opnd:$imm), 
+    let isConvertibleToThreeAddress = 1;
+  }
+  def ri : _ArithLogicRI<opc, (ins IntReg:$src, immS16opnd:$imm), 
 		"addscale $Rd, $imm shl "#shift,
 		[(set IntReg:$Rd, (add IntReg:$src, (shl (i32 immS16:$imm), shift)))]>;
-  def i48 : ArithLogic48<opc, (ins IntReg:$src, immU32opnd:$imm),
+  def i32 : _ArithLogicI32<opc, (ins IntReg:$src, immU32opnd:$imm),
 		"addscale $Rd, $imm shl "#shift,
 		[(set IntReg:$Rd, (add IntReg:$src, (shl (i32 immU32:$imm), shift)))]>;
   }
-  def rr : ArithLogicRRR<opc, (ins IntReg:$Ra, IntReg:$Rb),
-		"addscale $Rd, $Ra, $Rb shl "#shift,
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, shift)))]>;
-  def rri : ArithLogicRRI<opc, (ins IntReg:$Rs, immS6opnd:$imm), 
-		"addscale $Rd, $Rs, $imm shl "#shift,
-		[(set IntReg:$Rd, (add IntReg:$Rs, (shl (i32 immS6:$imm), shift)))]>;
+  def rr : RRR<!add(0xc00, !shl(opc, 1)), "addscale",
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, shift)))], 
+        "addscale$Cond $Rd, $Ra, $Rb shl "#shift>;
+  def rri : RRI<!add(0xc00, !shl(opc, 1)), "addscale",
+		[(set IntReg:$Rd, (add IntReg:$Ra, (shl (i32 immS6:$imm), shift)))],
+        "addscale$Cond $Rd, $Ra, $imm shl "#shift>;
 }
 // For the single even numbered addscale operation
 multiclass AddScale_E<int opc, int shift> : AddScale<opc, shift> {
   let Constraints="$src = $Rd", DisableEncoding="$src" in {
-  def qi : ArithLogicQI<opc, (ins LowReg:$src, immU5opnd:$imm),
+  def qi : _ArithLogicQI<opc, (ins LowReg:$src, immU5opnd:$imm),
 		"addscale $Rd, $imm shl "#shift,
         [(set LowReg:$Rd, (add LowReg:$src, (shl (i32 immU5:$imm), shift)))]> {
             let isConvertibleToThreeAddress = 1;
 		}
   }
+}
+
+// the remaining scale instructions
+multiclass Scale<bits<12> op, string asm, int shift, SDPatternOperator node> {
+  def rrr : RRR<op, asm,
+        [(set IntReg:$Rd, (node IntReg:$Ra, (shl IntReg:$Rb, shift)))],
+        !strconcat(asm, "$Cond $Rd, $Ra, $Rb shl "#shift)>;
+  def rri : RRI<op, asm,
+        [(set IntReg:$Rd, (node IntReg:$Ra, (shl immS6:$imm, shift)))],
+        !strconcat(asm, "$Cond $Rd, $Ra, $imm shl "#shift)>;
 }
 
 //===----------------------------------------------------------------------===//
@@ -497,16 +492,13 @@ def LDWrri : InstVC32<(outs IntReg:$dst), (ins MEMri:$addr), "ld $dst, $addr",
 
 
 // Move
-def MOVqq : ArithLogicQQ<0, (ins LowReg:$Rs), "mov $Rd, $Rs", []>;
+def MOVqq : ArithLogicQQ_1<0, "mov", []>;
 def MOVrr : R_R<0xc00, "mov", []>;
 let isMoveImm=1 in {
-  def MOVqi : ArithLogicQI<0, (ins immU5opnd:$imm), "mov $Rd, $imm",
-        [(set LowReg:$Rd, (i32 immU5:$imm))]>;
-  def MOVri : ArithLogicRI<0, (ins immS16opnd:$imm), "mov $Rd, $imm",
-		[(set IntReg:$Rd, (i32 immS16:$imm))]>;
+  def MOVqi : ArithLogicQI_1<0, "mov", [(set LowReg:$Rd, (i32 immU5:$imm))]>;
+  def MOVri : ArithLogicRI_1<0, "mov", [(set IntReg:$Rd, (i32 immS16:$imm))]>;
   def MOVrri : R_I<0xc00, "mov", [(set IntReg:$Rd, (i32 immS6:$imm))]>;
-  def MOVi48 : ArithLogic48<0, (ins immU32opnd:$imm), "mov $Rd, $imm",
-		[(set IntReg:$Rd, (i32 immU32:$imm))]>;
+  def MOVi32 : ArithLogicI32_1<0, "mov", [(set IntReg:$Rd, (i32 immU32:$imm))]>;
 }
 
 // 1 - CMN
@@ -545,7 +537,7 @@ defm ASB  : ArithLogicO2<31, "asb", null_frag>;            // No Codegen
 // There are a few extra add instructions
 // add Rd, Rs, imm32
 // 1110 11ss sssd dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu
-def ADDrri48 : InstVC48<(outs IntReg:$Rd), (ins IntReg:$Rs, immU32opnd:$imm),
+def ADDrri32 : InstVC48<(outs IntReg:$Rd), (ins IntReg:$Rs, immU32opnd:$imm),
         "add $Rd, $Rs, $imm",
         [(set IntReg:$Rd, (add IntReg:$Rs, immU32:$imm))]> {
   bits<5> Rd;
@@ -586,7 +578,7 @@ def ADDrri16 : InstVC32<(outs IntReg:$Rd), (ins AllReg:$Rs, immS16opnd:$imm),
 
 // 1110 0101 000d dddd oooo oooo oooo oooo oooo oooo oooo oooo
 // AKA lea
-def ADDrPCi48 : InstVC48<(outs IntReg:$Rd), (ins immU32opnd:$imm),
+def ADDrPCi32 : InstVC48<(outs IntReg:$Rd), (ins immU32opnd:$imm),
         "add $Rd, pc, $imm",
         [(set IntReg:$Rd, (add PC, (i32 immU32:$imm)))]> {
   bits<5> Rd;
@@ -599,24 +591,24 @@ def ADDrPCi48 : InstVC48<(outs IntReg:$Rd), (ins immU32opnd:$imm),
 }
 
 // Conditional Multiply Instructions  FIXME: no codegen
-def MULHDSSrrr : _RRR<0xc40, "mulhd${Cond}.ss $Rd, $Ra, $Rb", []>; 
-def MULHDSSrri : _RRI<0xc40, "mulhd${Cond}.ss $Rd, $Ra, $imm", []>;
-def MULHDSUrrr : _RRR<0xc42, "mulhd${Cond}.su $Rd, $Ra, $Rb", []>;
-def MULHDSUrri : _RRI<0xc42, "mulhd${Cond}.su $Rd, $Ra, $imm", []>;
-def MULHDUSrrr : _RRR<0xc44, "mulhd${Cond}.us $Rd, $Ra, $Rb", []>;
-def MULHDUSrri : _RRI<0xc44, "mulhd${Cond}.us $Rd, $Ra, $imm", []>;
-def MULHDUUrrr : _RRR<0xc46, "mulhd${Cond}.uu $Rd, $Ra, $Rb", []>;
-def MULHDUUrri : _RRI<0xc46, "mulhd${Cond}.uu $Rd, $Ra, $imm", []>;
+def MULHDSSrrr : RRR<0xc40, "mulhd", [], "mulhd${Cond}.ss $Rd, $Ra, $Rb">; 
+def MULHDSSrri : RRI<0xc40, "mulhd", [], "mulhd${Cond}.ss $Rd, $Ra, $imm">;
+def MULHDSUrrr : RRR<0xc42, "mulhd", [], "mulhd${Cond}.su $Rd, $Ra, $Rb">;
+def MULHDSUrri : RRI<0xc42, "mulhd", [], "mulhd${Cond}.su $Rd, $Ra, $imm">;
+def MULHDUSrrr : RRR<0xc44, "mulhd", [], "mulhd${Cond}.us $Rd, $Ra, $Rb">;
+def MULHDUSrri : RRI<0xc44, "mulhd", [], "mulhd${Cond}.us $Rd, $Ra, $imm">;
+def MULHDUUrrr : RRR<0xc46, "mulhd", [], "mulhd${Cond}.uu $Rd, $Ra, $Rb">;
+def MULHDUUrri : RRI<0xc46, "mulhd", [], "mulhd${Cond}.uu $Rd, $Ra, $imm">;
 
 // Conditional Divide Instructions   FIXME: no codegen
-def DIVSSrrr : _RRR<0xc48, "div${Cond}.ss $Rd, $Ra, $Rb", []>;
-def DIVSSrri : _RRI<0xc48, "div${Cond}.ss $Rd, $Ra, $imm", []>;
-def DIVSUrrr : _RRR<0xc4a, "div${Cond}.su $Rd, $Ra, $Rb", []>;
-def DIVSUrri : _RRI<0xc4a, "div${Cond}.su $Rd, $Ra, $imm", []>;
-def DIVUSrrr : _RRR<0xc4c, "div${Cond}.us $Rd, $Ra, $Rb", []>;
-def DIVUSrri : _RRI<0xc4c, "div${Cond}.us $Rd, $Ra, $imm", []>;
-def DIVUUrrr : _RRR<0xc4e, "div${Cond}.uu $Rd, $Ra, $Rb", []>;
-def DIVUUrri : _RRI<0xc4e, "div${Cond}.uu $Rd, $Ra, $imm", []>;
+def DIVSSrrr : RRR<0xc48, "div", [], "div${Cond}.ss $Rd, $Ra, $Rb">;
+def DIVSSrri : RRI<0xc48, "div", [], "div${Cond}.ss $Rd, $Ra, $imm">;
+def DIVSUrrr : RRR<0xc4a, "div", [], "div${Cond}.su $Rd, $Ra, $Rb">;
+def DIVSUrri : RRI<0xc4a, "div", [], "div${Cond}.su $Rd, $Ra, $imm">;
+def DIVUSrrr : RRR<0xc4c, "div", [], "div${Cond}.us $Rd, $Ra, $Rb">;
+def DIVUSrri : RRI<0xc4c, "div", [], "div${Cond}.us $Rd, $Ra, $imm">;
+def DIVUUrrr : RRR<0xc4e, "div", [], "div${Cond}.uu $Rd, $Ra, $Rb">;
+def DIVUUrri : RRI<0xc4e, "div", [], "div${Cond}.uu $Rd, $Ra, $imm">;
 
 // Additional Conditional Arithmetic and Logical Operations
 // no codegen (intrinsics?)
@@ -636,60 +628,19 @@ def COUNTr_r : R_R<0xc60, "count", []>;
 def COUNTr_i : R_I<0xc60, "count", []>;
 
 // Additional Addscale opcodes
-def ADDSCALE_5rrr : _RRR<0xc58, "addscale$Cond $Rd, $Ra, $Rb shl 5",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 5)))]>;
-def ADDSCALE_6rrr : _RRR<0xc5a, "addscale$Cond $Rd, $Ra, $Rb shl 6",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 6)))]>;
-def ADDSCALE_7rrr : _RRR<0xc5c, "addscale$Cond $Rd, $Ra, $Rb shl 7",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 7)))]>;
-def ADDSCALE_8rrr : _RRR<0xc5e, "addscale$Cond $Rd, $Ra, $Rb shl 8",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, 8)))]>;
+defm ADDSCALE_5 : Scale<0xc58, "addscale", 5, add>;
+defm ADDSCALE_6 : Scale<0xc5a, "addscale", 6, add>;
+defm ADDSCALE_7 : Scale<0xc5c, "addscale", 7, add>;
+defm ADDSCALE_8 : Scale<0xc5e, "addscale", 8, add>;
 
-def ADDSCALE_5rri : _RRI<0xc58, "addscale$Cond $Rd, $Ra, $imm shl 5",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl immS6:$imm, 5)))]>;
-def ADDSCALE_6rri : _RRI<0xc5a, "addscale$Cond $Rd, $Ra, $imm shl 6",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl immS6:$imm, 6)))]>;
-def ADDSCALE_7rri : _RRI<0xc5c, "addscale$Cond $Rd, $Ra, $imm shl 7",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl immS6:$imm, 7)))]>;
-def ADDSCALE_8rri : _RRI<0xc5e, "addscale$Cond $Rd, $Ra, $imm shl 8",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl immS6:$imm, 8)))]>;
-
-// Subscale opcodes
-def SUBSCALE_1rrr : _RRR<0xc62, "subscale$Cond $Rd, $Ra, $Rb shl 1",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 1)))]>;
-def SUBSCALE_2rrr : _RRR<0xc64, "subscale$Cond $Rd, $Ra, $Rb shl 2",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 2)))]>;
-def SUBSCALE_3rrr : _RRR<0xc66, "subscale$Cond $Rd, $Ra, $Rb shl 3",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 3)))]>;
-def SUBSCALE_4rrr : _RRR<0xc68, "subscale$Cond $Rd, $Ra, $Rb shl 4",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 4)))]>;
-def SUBSCALE_5rrr : _RRR<0xc6a, "subscale$Cond $Rd, $Ra, $Rb shl 5",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 5)))]>;
-def SUBSCALE_6rrr : _RRR<0xc6c, "subscale$Cond $Rd, $Ra, $Rb shl 6",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 6)))]>;
-def SUBSCALE_7rrr : _RRR<0xc6e, "subscale$Cond $Rd, $Ra, $Rb shl 7",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 7)))]>;
-def SUBSCALE_8rrr : _RRR<0xc70, "subscale$Cond $Rd, $Ra, $Rb shl 8",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl IntReg:$Rb, 8)))]>;
-
-def SUBSCALE_1rri : _RRI<0xc62, "subscale$Cond $Rd, $Ra, $imm shl 1",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 1)))]>;
-def SUBSCALE_2rri : _RRI<0xc64, "subscale$Cond $Rd, $Ra, $imm shl 2",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 2)))]>;
-def SUBSCALE_3rri : _RRI<0xc66, "subscale$Cond $Rd, $Ra, $imm shl 3",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 3)))]>;
-def SUBSCALE_4rri : _RRI<0xc68, "subscale$Cond $Rd, $Ra, $imm shl 4",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 4)))]>;
-def SUBSCALE_5rri : _RRI<0xc6a, "subscale$Cond  $Rd, $Ra, $imm shl 5",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 5)))]>;
-def SUBSCALE_6rri : _RRI<0xc6c, "subscale$Cond  $Rd, $Ra, $imm shl 6",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 6)))]>;
-def SUBSCALE_7rri : _RRI<0xc6e, "subscale$Cond  $Rd, $Ra, $imm shl 7",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 7)))]>;
-def SUBSCALE_8rri : _RRI<0xc70, "subscale$Cond $Rd, $Ra, $imm shl 8",
-        [(set IntReg:$Rd, (sub IntReg:$Ra, (shl immS6:$imm, 8)))]>;
-
-
+defm SUBSCALE_1 : Scale<0xc62, "subscale", 1, sub>;
+defm SUBSCALE_2 : Scale<0xc64, "subscale", 2, sub>;
+defm SUBSCALE_3 : Scale<0xc66, "subscale", 3, sub>;
+defm SUBSCALE_4 : Scale<0xc68, "subscale", 4, sub>;
+defm SUBSCALE_5 : Scale<0xc6a, "subscale", 5, sub>;
+defm SUBSCALE_6 : Scale<0xc6c, "subscale", 6, sub>;
+defm SUBSCALE_7 : Scale<0xc6e, "subscale", 7, sub>;
+defm SUBSCALE_8 : Scale<0xc70, "subscale", 8, sub>;
 
 
 let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1, isCodeGenOnly=1 in
