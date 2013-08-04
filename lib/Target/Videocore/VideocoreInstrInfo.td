@@ -95,12 +95,17 @@ def neg_xform : SDNodeXForm<imm, [{
   return getI32Imm(-value);
 }]>;
 
+def immU5_asmoperand : AsmOperandClass {
+  let Name = "ImmU5";
+}
+
 def immU5 : PatLeaf<(imm), [{
   return (uint32_t)N->getZExtValue() < (1 << 5);
 }]>;
 
 def immU5opnd : Operand<i32> {
       let PrintMethod = "printU5ImmOperand";
+      let ParserMatchClass = immU5_asmoperand;
 }
 
 def immU6opnd : Operand<i32> {
@@ -116,16 +121,26 @@ def immU16 : PatLeaf<(imm), [{
   return (uint32_t)N->getZExtValue() < (1 << 16);
 }]>;
 
+def immS6_asmoperand : AsmOperandClass {
+  let Name = "ImmS6";
+}
+
 def immS6 : PatLeaf<(imm), [{ return isInt<6>(N->getSExtValue()); }]>;
 
 def immS6opnd : Operand<i32> {
       let PrintMethod = "printSignedImmOperand";
+      let ParserMatchClass = immS6_asmoperand;
+}
+
+def immS16_asmoperand : AsmOperandClass {
+  let Name = "ImmS16";
 }
 
 def immS16 : PatLeaf<(imm), [{ return isInt<16>(N->getSExtValue()); }]>;
 
 def immS16opnd : Operand<i32> {
       let PrintMethod = "printSignedImmOperand";
+      let ParserMatchClass = immS16_asmoperand;
 }
 
 def immU32 : PatLeaf<(imm), [{ return isInt<32>(N->getZExtValue()); }]>;
@@ -238,7 +253,7 @@ multiclass ArithLogicE3<int opc, string asmstr, SDPatternOperator node,
   let Constraints="$src = $Rd", DisableEncoding="$src" in {
   def qi : ArithLogicQI<opc, (ins LowReg:$src, immU5opnd:$imm),
 		!strconcat(asmstr, " $Rd, $imm"),
-        [(set LowReg:$Rd, (node LowReg:$src, (i32 immU5:$imm)))]> {
+        [(set LowReg:$Rd, (immnode LowReg:$src, (i32 immU5:$imm)))]> {
             let isConvertibleToThreeAddress = 1;
 		}
   }
@@ -267,7 +282,7 @@ multiclass ArithLogicE2<int opc, string asmstr, SDPatternOperator node,
     SDPatternOperator immnode=node> : ArithLogicO2<opc, asmstr, node, immnode> {
   def qi : ArithLogicQI<opc, (ins immU5opnd:$imm),
 		!strconcat(asmstr, " $Rd, $imm"),
-        [(set LowReg:$Rd, (node (i32 immU5:$imm)))]>;
+        [(set LowReg:$Rd, (immnode (i32 immU5:$imm)))]>;
 }
 
 

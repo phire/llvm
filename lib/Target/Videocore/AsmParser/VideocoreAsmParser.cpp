@@ -137,9 +137,18 @@ public:
   virtual bool isImm() const LLVM_OVERRIDE {
     return Kind == KindImm;
   }
-  /*bool isImm(int64_t MinValue, int64_t MaxValue) const {
+  bool isImm(int64_t MinValue, int64_t MaxValue) const {
     return Kind == KindImm && inRange(Imm, MinValue, MaxValue);
-  }*/
+  }
+  bool isImmU5() const {
+    return isImm(0, 31);
+  } 
+  bool isImmS6() const {
+    return isImm(-64, 63);
+  }
+  bool isImmS16() const {
+    return isImm(-32768, 32767);
+  }
   const MCExpr *getImm() const {
     assert(Kind == KindImm && "Not an immediate");
     return Imm;
@@ -169,6 +178,15 @@ public:
   void addImmOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands");
     addExpr(Inst, getImm());
+  }
+  void addImmU5Operands(MCInst &Inst, unsigned N) const {
+    addImmOperands(Inst, N);
+  }
+  void addImmS6Operands(MCInst &Inst, unsigned N) const {
+    addImmOperands(Inst, N);
+  }
+  void addImmS16Operands(MCInst &Inst, unsigned N) const {
+    addImmOperands(Inst, N);
   }
   void addCondCodeOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands");
@@ -201,10 +219,10 @@ private:
 
 public:
   enum VideocoreMatchResultTy {
-    Match_NullMatchType = FIRST_TARGET_MATCH_RESULT_TY,
+    Match_ImmediateTooLarge = FIRST_TARGET_MATCH_RESULT_TY,
+
 #define GET_OPERAND_DIAGNOSTIC_TYPES
 #include "VideocoreGenAsmMatcher.inc"
-
   };
 
   VideocoreAsmParser(MCSubtargetInfo &sti, MCAsmParser &parser)
@@ -223,12 +241,14 @@ public:
                                 StringRef Name, SMLoc NameLoc,
                                 SmallVectorImpl<MCParsedAsmOperand*> &Operands)
     LLVM_OVERRIDE;
+
+  unsigned validateTargetOperandClass(MCParsedAsmOperand *Op, unsigned Kind);
+
   virtual bool
     MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
                             SmallVectorImpl<MCParsedAsmOperand*> &Operands,
                             MCStreamer &Out, unsigned &ErrorInfo,
                             bool MatchingInlineAsm) LLVM_OVERRIDE;
-
 };
 }
 
@@ -549,6 +569,18 @@ parseOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands,
 
 }
 
+unsigned VideocoreAsmParser::
+validateTargetOperandClass(MCParsedAsmOperand *AsmOp, unsigned Kind) {
+  switch(Kind) {
+  case MCK_ImmU5:
+  case MCK_ImmS6:
+  case MCK_ImmS16:
+    // Provide better error messages for oversized immediates
+    if(AsmOp->isImm()) return Match_ImmediateTooLarge;
+  }
+  return Match_InvalidOperand;
+}
+
 bool VideocoreAsmParser::
 MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
                         SmallVectorImpl<MCParsedAsmOperand*> &Operands,
@@ -593,6 +625,14 @@ MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
         ErrorLoc = IDLoc;
     }
     return Error(ErrorLoc, "invalid operand for instruction");
+  }
+
+  case Match_ImmediateTooLarge: {
+    SMLoc ErrorLoc = ((VideocoreOperand*)Operands[ErrorInfo])->getStartLoc();
+    if (ErrorLoc == SMLoc())
+      ErrorLoc = IDLoc;
+
+    return Error(ErrorLoc, "immediate is too large for this instruction");
   }
 
   case Match_MnemonicFail:
