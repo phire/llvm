@@ -381,7 +381,7 @@ def bcc : InstVC32<(outs),
     let isPredicable=1;
 }
 
-
+/*
 def CMPqq : InstVC16<(outs), (ins LowReg:$Rd, LowReg:$Rs), "cmp $Rd, $Rs",
 	[(set NZCV, (VCcmp LowReg:$Rd, LowReg:$Rs))]> {
 	bits<4> Rd;
@@ -432,7 +432,7 @@ def CMPri : InstVC32<(outs), (ins IntReg:$Ra, immS16opnd:$imm), "cmp $Ra, $imm",
 	let Inst{20-16} = Ra;
 	let Inst{15-0} = imm;
 	let Defs = [NZCV];
-}
+}*/
 
 
 /*
@@ -512,8 +512,9 @@ let isMoveImm=1 in {
   def MOVi32 : ArithLogicI32_1<0, "mov", [(set IntReg:$Rd, (i32 immU32:$imm))]>;
 }
 
-// 1 - CMN
-defm ADD  : ArithLogicO3<2, "add", add>;
+// FIXME: cmn is completly wrong, for disassembly/assembly  No Codegen
+defm CMN  : ArithLogicO3<1, "cmn", null_frag>;
+defm ADD  : ArithLogicE3<2, "add", add>;
 defm BIC  : ArithLogicO3<3, "bic", bic>;
 defm MUL  : ArithLogicE3<4, "mul", mul>;
 defm XOR  : ArithLogicO3<5, "xor", xor>;
@@ -521,9 +522,11 @@ defm SUB  : ArithLogicE3<6, "sub", sub>;
 defm AND  : ArithLogicO3<7, "and", and>;
 defm NOT  : ArithLogicE2<8, "and", not>;
 defm ROR  : ArithLogicO3<9, "ror", rotr>;
-// 10 - CMP
+// FIXME: cmp is completly wrong and doesn't work with codegen above
+defm CMP  : ArithLogicE3<10, "cmp", null_frag>;
 defm RSUB : ArithLogicO3<11, "rsub", rsub>;
-// 12 - BTST
+// FIXME: btest is completly wrong, for disassembly/assembly  No Codegen
+defm BTEST: ArithLogicE3<12, "btest", null_frag>;
 defm OR   : ArithLogicO3<13, "or", or>;
 defm BMASK: ArithLogicE3<14, "bmask", bmask, null_frag>;
 defm MAX  : ArithLogicO3<15, "max", null_frag>;            // No Codegen
