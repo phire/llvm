@@ -335,7 +335,8 @@ StringRef VideocoreAsmParser::splitMnemonic(StringRef Mnemonic,
   // Ignore some mnemonics we know aren't predicated forms.
   //
   // FIXME: Would be nice to autogen this.
-  if (Mnemonic == "vcmpge" || Mnemonic == "vmuls")
+  if (Mnemonic == "vcmpge" || Mnemonic == "vmuls" || Mnemonic == "shls" ||
+      Mnemonic == "addscale" || Mnemonic == "subscale")
       return Mnemonic;
 
   unsigned CC = StringSwitch<unsigned>(Mnemonic.substr(Mnemonic.size()-2))
