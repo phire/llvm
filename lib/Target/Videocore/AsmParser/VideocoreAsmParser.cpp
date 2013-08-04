@@ -149,6 +149,9 @@ public:
   bool isImmS16() const {
     return isImm(-32768, 32767);
   }
+  bool isImmS27() const {
+    return isImm(-0x07ffffff-1, 0x07ffffff);
+  }
   const MCExpr *getImm() const {
     assert(Kind == KindImm && "Not an immediate");
     return Imm;
@@ -186,6 +189,9 @@ public:
     addImmOperands(Inst, N);
   }
   void addImmS16Operands(MCInst &Inst, unsigned N) const {
+    addImmOperands(Inst, N);
+  }
+  void addImmS27Operands(MCInst &Inst, unsigned N) const {
     addImmOperands(Inst, N);
   }
   void addCondCodeOperands(MCInst &Inst, unsigned N) const {

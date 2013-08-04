@@ -82,7 +82,7 @@ bool VideocoreDAGToDAGISel::SelectADDRri(SDValue Addr,
 
   if (Addr.getOpcode() == ISD::ADD) {
     if (ConstantSDNode *CN = dyn_cast<ConstantSDNode>(Addr.getOperand(1))) {
-      if (isInt<13>(CN->getSExtValue())) {
+      if (isInt<13>(CN->getSExtValue())) { //FIXME: shouldn't this be isInt<11>
         if (FrameIndexSDNode *FIN =
                 dyn_cast<FrameIndexSDNode>(Addr.getOperand(0))) {
           // Constant offset from frame ref.

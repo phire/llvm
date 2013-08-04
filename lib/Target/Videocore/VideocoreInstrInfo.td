@@ -143,6 +143,17 @@ def immS16opnd : Operand<i32> {
       let ParserMatchClass = immS16_asmoperand;
 }
 
+def immS27_asmoperand : AsmOperandClass {
+  let Name = "ImmS27";
+}
+
+def immS27 : PatLeaf<(imm), [{ return isInt<27>(N->getSExtValue()); }]>;
+
+def immS27opnd : Operand<i32> {
+      let PrintMethod = "printSignedImmOperand";
+      let ParserMatchClass = immS27_asmoperand;
+}
+
 def immU32 : PatLeaf<(imm), [{ return isInt<32>(N->getZExtValue()); }]>;
 
 def immU32opnd : Operand<i32> {
@@ -458,7 +469,7 @@ def STHSqq : LDST16<3, 1,
                  [(truncstorei16 LowReg:$src, ADDRrr:$addr)]>;
 */
 
-def STWrri : InstVC32<(outs), (ins IntReg:$src, MEMri:$addr), "st $src, $addr",
+def STWrri12 : InstVC32<(outs), (ins IntReg:$src, MEMri:$addr), "st $src, $addr",
         [(store IntReg:$src, ADDRri:$addr)]> {
     bits<5> Rd;
     bits<5> Rs;
@@ -474,7 +485,7 @@ def STWrri : InstVC32<(outs), (ins IntReg:$src, MEMri:$addr), "st $src, $addr",
     let DecoderMethod = "DecodeMem_5_12";
 }
 
-def LDWrri : InstVC32<(outs IntReg:$dst), (ins MEMri:$addr), "ld $dst, $addr",
+def LDWrri12 : InstVC32<(outs IntReg:$dst), (ins MEMri:$addr), "ld $dst, $addr",
         [(set IntReg:$dst, (load ADDRri:$addr))]> {
     bits<5> Rd;
     bits<5> Rs;
@@ -642,6 +653,92 @@ defm SUBSCALE_6 : Scale<0xc6c, "subscale", 6, sub>;
 defm SUBSCALE_7 : Scale<0xc6e, "subscale", 7, sub>;
 defm SUBSCALE_8 : Scale<0xc70, "subscale", 8, sub>;
 
+// Memory Instructions - No Codegen
+// Conditional with indexed/displacement
+def LDWrrr : RRR<0xa00, "ldw", []>;
+def LDWrri : RRI<0xa00, "ldw", []>; // FIXME: Docs say the offset is unsigned,
+                                    // but I've done signed here. Is this right?
+def STWrrr : RRR<0xa02, "stw", []>;
+def STWrri : RRI<0xa02, "stw", []>; 
+
+def LDHrrr : RRR<0xa04, "ldh", []>;
+def LDHrri : RRI<0xa04, "ldh", []>; 
+def STHrrr : RRR<0xa06, "sth", []>;
+def STHrri : RRI<0xa06, "sth", []>; 
+
+def LDBrrr : RRR<0xa08, "ldb", []>;
+def LDBrri : RRI<0xa08, "ldb", []>; 
+def STBrrr : RRR<0xa0a, "stb", []>;
+def STBrri : RRI<0xa0a, "stb", []>; 
+
+def LDHSrrr : RRR<0xa0c, "ldhs", []>;
+def LDHSrri : RRI<0xa0c, "ldhs", []>; 
+def STHSrrr : RRR<0xa0e, "sths", []>;
+def STHSrri : RRI<0xa0e, "sths", []>;
+
+def LDWrrD : RR0<0xa40, "ldw", [], "ldw$Cond $Rd, --(${Ra})">;
+def STWrrD : RR0<0xa42, "stw", [], "stw$Cond $Rd, --(${Ra})">;
+def LDHrrD : RR0<0xa44, "ldh", [], "ldh$Cond $Rd, --(${Ra})">;
+def STHrrD : RR0<0xa46, "sth", [], "sth$Cond $Rd, --(${Ra})">;
+def LDBrrD : RR0<0xa48, "ldb", [], "ldb$Cond $Rd, --(${Ra})">;
+def STBrrD : RR0<0xa4a, "stb", [], "stb$Cond $Rd, --(${Ra})">;
+def LDHSrrD : RR0<0xa4c, "ldhs", [], "ldhs$Cond $Rd, --(${Ra})">;
+def STHSrrD : RR0<0xa4e, "sths", [], "sths$Cond $Rd, --(${Ra})">;
+
+def LDWrrI : RR0<0xa50, "ldw", [], "ldw$Cond $Rd, (${Ra})++">;
+def STWrrI : RR0<0xa52, "stw", [], "stw$Cond $Rd, (${Ra})++">;
+def LDHrrI : RR0<0xa54, "ldh", [], "ldh$Cond $Rd, (${Ra})++">;
+def STHrrI : RR0<0xa56, "sth", [], "sth$Cond $Rd, (${Ra})++">;
+def LDBrrI : RR0<0xa58, "ldb", [], "ldb$Cond $Rd, (${Ra})++">;
+def STBrrI : RR0<0xa5a, "stb", [], "stb$Cond $Rd, (${Ra})++">;
+def LDHSrrI : RR0<0xa5c, "ldhs", [], "ldhs$Cond $Rd, (${Ra})++">;
+def STHSrrI : RR0<0xa5e, "sths", [], "sths$Cond $Rd, (${Ra})++">;
+
+class _RI27<bits<8> opc, bits<3> mod, dag ins, string asm, list<dag> pattern>
+ : InstVC48<(outs IntReg:$Rd), ins, asm, pattern> {
+  bits<5> Rd;
+  bits<27> offset;
+
+  let Inst{47-40} = opc;
+  let Inst{39-37} = mod;
+  let Inst{36-32} = Rd;
+  let Inst{26-0} = offset;
+}
+
+class RI27<bits<8> opc, bits<3> mod, string asm, list<dag> pattern>
+ : _RI27<opc, mod, (ins IntReg:$Ra, immS27opnd:$offset),
+        !strconcat(asm, " $Rd, ($Ra + ${offset})"), pattern> {
+  bits<5> Ra;
+
+  let Inst{31-27} = Ra;
+}
+
+class PCI27<bits<8> opc, bits<3> mod, string asm, list<dag> pattern>
+  : _RI27<opc, mod, (ins immS27opnd:$offset),
+          !strconcat(asm, " $Rd, (pc + ${offset})"), pattern> {
+  let Uses = [PC];
+
+  let Inst{31-27} = 0b11111;
+}
+
+
+def LDWri27  : RI27<0xe6, 0, "ldw", []>;
+def STWri27  : RI27<0xe6, 1, "stw", []>;
+def LDHri27  : RI27<0xe6, 2, "ldh", []>;
+def STHri27  : RI27<0xe6, 3, "sth", []>;
+def LDBri27  : RI27<0xe6, 4, "ldb", []>;
+def STBri27  : RI27<0xe6, 5, "stb", []>;
+def LDHSri27 : RI27<0xe6, 6, "ldhs", []>;
+def STHSri27 : RI27<0xe6, 7, "sths", []>;
+
+def LDW_PCi27  : PCI27<0xe7, 0, "ldw", []>;
+def STW_PCi27  : PCI27<0xe7, 1, "stw", []>;
+def LDH_PCi27  : PCI27<0xe7, 2, "ldh", []>;
+def STH_PCi27  : PCI27<0xe7, 3, "sth", []>;
+def LDB_PCi27  : PCI27<0xe7, 4, "ldb", []>;
+def STB_PCi27  : PCI27<0xe7, 5, "stb", []>;
+def LDHS_PCi27 : PCI27<0xe7, 6, "ldhs", []>;
+def STHS_PCi27 : PCI27<0xe7, 7, "sths", []>;
 
 let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1, isCodeGenOnly=1 in
     def BLR : InstVC16<(outs), (ins), "blr",
@@ -742,6 +839,13 @@ def CPUID : InstVC16<(outs IntReg:$Rd), (ins), "cpuid $Rd", []> {
   let Inst{15-5} = 7;
   let Inst{4-0} = Rd;
 }
+
+// For our disassembler
+def SCALAR16 : InstVC<2, (outs), (ins), "<Scalar16>", []>;
+def SCALAR32 : InstVC<4, (outs), (ins), "<Scalar32>", []>;
+def SCALAR48 : InstVC<6, (outs), (ins), "<Scalar48>", []>;
+def VECTOR48 : InstVC<6, (outs), (ins), "<Vector48>", []>;
+def VECTOR80 : InstVC<10, (outs), (ins), "<Vector80>", []>;
 
 
 //===----------------------------------------------------------------------===//
