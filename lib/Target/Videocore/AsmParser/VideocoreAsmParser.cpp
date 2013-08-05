@@ -144,7 +144,7 @@ public:
     return isImm(0, 31);
   } 
   bool isImmS6() const {
-    return isImm(-64, 63);
+    return isImm(-32, 31);
   }
   bool isImmS16() const {
     return isImm(-32768, 32767);
