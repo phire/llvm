@@ -38,7 +38,7 @@ public:
     EndOfStatement,
     Colon,
     Space,
-    Plus, Minus, Tilde,
+    Plus, PlusPlus, Minus, MinusMinus, Tilde,
     Slash,    // '/'
     BackSlash, // '\'
     LParen, RParen, LBrac, RBrac, LCurly, RCurly,

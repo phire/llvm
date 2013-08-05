@@ -450,8 +450,6 @@ AsmToken AsmLexer::LexToken() {
     isAtStartOfLine = true;
     return AsmToken(AsmToken::EndOfStatement, StringRef(TokStart, 1));
   case ':': return AsmToken(AsmToken::Colon, StringRef(TokStart, 1));
-  case '+': return AsmToken(AsmToken::Plus, StringRef(TokStart, 1));
-  case '-': return AsmToken(AsmToken::Minus, StringRef(TokStart, 1));
   case '~': return AsmToken(AsmToken::Tilde, StringRef(TokStart, 1));
   case '(': return AsmToken(AsmToken::LParen, StringRef(TokStart, 1));
   case ')': return AsmToken(AsmToken::RParen, StringRef(TokStart, 1));
@@ -464,6 +462,14 @@ AsmToken AsmLexer::LexToken() {
   case '$': return AsmToken(AsmToken::Dollar, StringRef(TokStart, 1));
   case '@': return AsmToken(AsmToken::At, StringRef(TokStart, 1));
   case '\\': return AsmToken(AsmToken::BackSlash, StringRef(TokStart, 1));
+  case '+':
+    if (*CurPtr == '+')
+      return ++CurPtr, AsmToken(AsmToken::PlusPlus, StringRef(TokStart, 2));
+    return AsmToken(AsmToken::Plus, StringRef(TokStart, 1));
+  case '-':
+    if (*CurPtr == '-')
+      return ++CurPtr, AsmToken(AsmToken::MinusMinus, StringRef(TokStart, 2));
+    return AsmToken(AsmToken::Minus, StringRef(TokStart, 1));
   case '=':
     if (*CurPtr == '=')
       return ++CurPtr, AsmToken(AsmToken::EqualEqual, StringRef(TokStart, 2));
