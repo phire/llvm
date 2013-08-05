@@ -697,34 +697,7 @@ def STBrrI : RR0<0xa5a, "stb", [], "stb$Cond $Rd, (${Ra})++">;
 def LDHSrrI : RR0<0xa5c, "ldhs", [], "ldhs$Cond $Rd, (${Ra})++">;
 def STHSrrI : RR0<0xa5e, "sths", [], "sths$Cond $Rd, (${Ra})++">;
 
-class _RI27<bits<8> opc, bits<3> mod, dag ins, string asm, list<dag> pattern>
- : InstVC48<(outs IntReg:$Rd), ins, asm, pattern> {
-  bits<5> Rd;
-  bits<27> offset;
-
-  let Inst{47-40} = opc;
-  let Inst{39-37} = mod;
-  let Inst{36-32} = Rd;
-  let Inst{26-0} = offset;
-}
-
-class RI27<bits<8> opc, bits<3> mod, string asm, list<dag> pattern>
- : _RI27<opc, mod, (ins IntReg:$Ra, immS27opnd:$offset),
-        !strconcat(asm, " $Rd, ($Ra + ${offset})"), pattern> {
-  bits<5> Ra;
-
-  let Inst{31-27} = Ra;
-}
-
-class PCI27<bits<8> opc, bits<3> mod, string asm, list<dag> pattern>
-  : _RI27<opc, mod, (ins immS27opnd:$offset),
-          !strconcat(asm, " $Rd, (pc + ${offset})"), pattern> {
-  let Uses = [PC];
-
-  let Inst{31-27} = 0b11111;
-}
-
-
+// 27 bit offsets
 def LDWri27  : RI27<0xe6, 0, "ldw", []>;
 def STWri27  : RI27<0xe6, 1, "stw", []>;
 def LDHri27  : RI27<0xe6, 2, "ldh", []>;

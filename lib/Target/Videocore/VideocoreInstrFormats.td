@@ -131,6 +131,35 @@ class RRI<bits<12> op, string mnemonic, list<dag> pattern,
   let Inst{5-0} = imm;
 }
 
+// Memory with 27bit offset
+class _RI27<bits<8> opc, bits<3> mod, dag ins, string asm, list<dag> pattern>
+ : InstVC48<(outs IntReg:$Rd), ins, asm, pattern> {
+  bits<5> Rd;
+  bits<27> offset;
+
+  let Inst{47-40} = opc;
+  let Inst{39-37} = mod;
+  let Inst{36-32} = Rd;
+  let Inst{26-0} = offset;
+}
+
+class RI27<bits<8> opc, bits<3> mod, string asm, list<dag> pattern>
+ : _RI27<opc, mod, (ins IntReg:$Ra, immS27opnd:$offset),
+        !strconcat(asm, " $Rd, ($Ra + ${offset})"), pattern> {
+  bits<5> Ra;
+
+  let Inst{31-27} = Ra;
+}
+
+class PCI27<bits<8> opc, bits<3> mod, string asm, list<dag> pattern>
+  : _RI27<opc, mod, (ins immS27opnd:$offset),
+          !strconcat(asm, " $Rd, (pc + ${offset})"), pattern> {
+  let Uses = [PC];
+
+  let Inst{31-27} = 0b11111;
+}
+
+
 // Arithmetic and logic instruction formats
 
 class _ArithLogicQQ<bits<5> op, dag ins, string asm, list<dag> pattern>
