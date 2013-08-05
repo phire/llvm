@@ -36,6 +36,12 @@ public:
     ScalarReg
   };
 
+  enum MemUpdate {
+    None = 0,
+    PreDecrement,
+    PostIncrement
+  };
+
 private:
   enum OperandKind {
     KindToken,
@@ -61,10 +67,18 @@ private:
     unsigned Num;
   };
 
+  // Memory operation BaseReg with optional IndexReg or displacement
+  struct MemOp {
+    unsigned Base;
+    unsigned Index;
+    const MCExpr *Disp;
+    unsigned Update;
+  };
+
   union {
     TokenOp Token;
     RegOp Reg;
-    unsigned AccessReg;
+    MemOp Mem;
     const MCExpr *Imm;
     int CondCode;
   };
@@ -97,6 +111,16 @@ public:
     VideocoreOperand *Op = new VideocoreOperand(KindReg, StartLoc, EndLoc);
     Op->Reg.Kind = ScalarReg;
     Op->Reg.Num = Num;
+    return Op;
+  }
+  static VideocoreOperand *createMem(unsigned Base, unsigned Index, 
+                                     const MCExpr *Disp, unsigned Update,
+                                   SMLoc StartLoc, SMLoc EndLoc) {
+    VideocoreOperand *Op = new VideocoreOperand(KindMem, StartLoc, EndLoc);
+    Op->Mem.Base = Base;
+    Op->Mem.Index = Index;
+    Op->Mem.Disp = Disp;
+    Op->Mem.Update = Update;
     return Op;
   }
   static VideocoreOperand *createImm(const MCExpr *Expr, SMLoc StartLoc,
@@ -178,6 +202,15 @@ public:
     assert(N == 1 && "Invalid number of operands");
     Inst.addOperand(MCOperand::CreateReg(getReg()));
   }
+  void addMemOperands(MCInst &Inst, unsigned N) const {
+    //assert((!Mem.Index && !Mem.Disp) && N == 1 && "Invalid number of operands");
+    //assert((!Mem.Index || !Mem.Disp) && (&& N == 2 && "Invalid number of operands");
+    Inst.addOperand(MCOperand::CreateReg(Mem.Base));
+    if (Mem.Index)
+      Inst.addOperand(MCOperand::CreateReg(Mem.Index));
+    if (Mem.Disp)
+      addExpr(Inst, Mem.Disp);
+  }
   void addImmOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands");
     addExpr(Inst, getImm());
@@ -200,6 +233,7 @@ public:
   }
 
 };
+}
 
 class VideocoreAsmParser : public MCTargetAsmParser {
 #define GET_ASSEMBLER_HEADER
@@ -255,8 +289,10 @@ public:
                             SmallVectorImpl<MCParsedAsmOperand*> &Operands,
                             MCStreamer &Out, unsigned &ErrorInfo,
                             bool MatchingInlineAsm) LLVM_OVERRIDE;
+
+  OperandMatchResultTy
+  parseMem(SmallVectorImpl<MCParsedAsmOperand*> &Operands);
 };
-}
 
 #define GET_REGISTER_MATCHER
 #define GET_SUBTARGET_FEATURE_NAME
@@ -282,11 +318,11 @@ bool VideocoreAsmParser::ParseRegister(unsigned &RegNo, SMLoc &StartLoc,
 
 /// Try to parse a register name.  The token must be an Identifier when called,
 /// and if it is a register name the token is eaten and the register number is
-/// returned.  Otherwise return -1.
+/// returned.  Otherwise return 0.
 ///
 int VideocoreAsmParser::tryParseRegister() {
   const AsmToken &Tok = Parser.getTok();
-  if (Tok.isNot(AsmToken::Identifier)) return -1;
+  if (Tok.isNot(AsmToken::Identifier)) return 0;
 
   std::string lowerCase = Tok.getString().lower();
   unsigned RegNum = MatchRegisterName(lowerCase);
@@ -498,12 +534,70 @@ ParseInstruction(ParseInstructionInfo &Info, StringRef Name, SMLoc NameLoc,
   return false;
 }
 
+VideocoreAsmParser::OperandMatchResultTy VideocoreAsmParser::
+parseMem(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
+  SMLoc Loc = Parser.getTok().getLoc();
+  // Starts with "(" or "--("
+  if (getLexer().is(AsmToken::LParen) || getLexer().is(AsmToken::MinusMinus)) {
+    int Update = Parser.Lex().is(AsmToken::MinusMinus) ? 
+                 VideocoreOperand::PreDecrement : 
+                 VideocoreOperand::None;
+    unsigned Base;
+    unsigned Index;
+    const MCExpr *Disp;
+
+    // If needed, eat '('
+    if(Update == VideocoreOperand::PreDecrement) {
+      if(getLexer().isNot(AsmToken::LParen)) {
+        Error(Parser.getTok().getLoc(), "expected '('");
+        return MatchOperand_ParseFail;
+      }
+      Parser.Lex();
+    }
+
+    // Base register
+    Base = tryParseRegister();
+    if (!Base) {
+      Error(Parser.getTok().getLoc(), "expected register");
+      return MatchOperand_ParseFail;
+    }
+    // Optional Index or Displacement
+    if (!getLexer().is(AsmToken::RParen)) {
+      if (getLexer().is(AsmToken::Plus) || getLexer().is(AsmToken::Minus)) {
+        // Don't swallow the '+' or '-', the expression will parse it
+        Index = tryParseRegister();
+        if (Index == 0 && getParser().parseExpression(Disp))
+            return MatchOperand_ParseFail;
+      } else {
+        Error(Parser.getTok().getLoc(), "expected '+', '-', or ')'");
+        return MatchOperand_ParseFail;
+      }
+    }
+    if (!getLexer().is(AsmToken::RParen)) {
+      Error(Parser.getTok().getLoc(), "expected ')'");
+      return MatchOperand_ParseFail;
+    }
+    Parser.Lex();
+    if (getLexer().is(AsmToken::PlusPlus)) {
+      if (Update == VideocoreOperand::PreDecrement) {
+        // You can't both increment and decrement
+        Error(Parser.getTok().getLoc(), "unexpected '++'");
+        return MatchOperand_ParseFail;
+      }
+      Update = VideocoreOperand::PostIncrement;
+    }
+    Operands.push_back(VideocoreOperand::createMem(Base, Index, 
+                       Disp, Update, Loc, Parser.getTok().getLoc())); 
+    return MatchOperand_Success;
+  }
+  return MatchOperand_NoMatch;
+}
+
 bool VideocoreAsmParser::
 parseOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands,
              StringRef Mnemonic) {
   SMLoc S, E;
 
-  /*
   // Check if the current operand has a custom associated parser, if so, try to
   // custom parse the operand, or fallback to the general approach.
   OperandMatchResultTy ResTy = MatchOperandParserImpl(Operands, Mnemonic);
@@ -515,7 +609,6 @@ parseOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands,
   // the operand parsing failed.
   if (ResTy == MatchOperand_ParseFail)
     return true;
-  */
 
   switch (getLexer().getKind()) {
   default:
@@ -541,39 +634,7 @@ parseOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands,
     Operands.push_back(VideocoreOperand::createImm(IdVal, S, E));
     return false;
   }
-  case AsmToken::LParen: { // Memory Operand
-    Parser.Lex();
-
-    if(tryParseRegisterWithWriteBack(Operands)) { // base
-      Error(Parser.getTok().getLoc(), "expected register");
-      return true;
-    }
-    const MCExpr *disp;
-    if(!getLexer().is(AsmToken::RParen)) {
-      if(tryParseRegisterWithWriteBack(Operands)) { // index
-        S = Parser.getTok().getLoc();
-        if (!getLexer().is(AsmToken::Plus) && !getLexer().is(AsmToken::Minus)) {
-           Error(Parser.getTok().getLoc(), "expected '+' or '-'");
-           return true;
-        }
-        // Don't swallow the '+' or '-', the expression will parse it
-        if (getParser().parseExpression(disp)) { // displacement
-          Error(Parser.getTok().getLoc(), "problem parsing expression");
-          return true;
-        }
-        E = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
-        Operands.push_back(VideocoreOperand::createImm(disp, S, E));
-      }
-    }
-    if(!getLexer().is(AsmToken::RParen)) {
-      Error(Parser.getTok().getLoc(), "expected ')'");
-      return true;
-    }
-    Parser.Lex();
-    return false;
   }
-  }
-
 }
 
 unsigned VideocoreAsmParser::

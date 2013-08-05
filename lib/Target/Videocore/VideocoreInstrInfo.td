@@ -192,6 +192,11 @@ def NEGu5 : ComplexPattern<i32, 1, "SelectNEGu5", [imm]>;
 def ADDRrr : ComplexPattern<i32, 2, "SelectADDRrr", [], []>;
 def ADDRri : ComplexPattern<i32, 2, "SelectADDRri", [frameindex], []>;
 
+def memoperand : AsmOperandClass {
+  let Name = "Mem";
+  let ParserMethod = "parseMem";
+  let RenderMethod = "addMemOperands";
+}
 
 // Address operands
 let PrintMethod = "printMemOperand" in {
@@ -201,6 +206,7 @@ let PrintMethod = "printMemOperand" in {
   def MEMri : Operand<i32> {
     let MIOperandInfo = (ops IntReg, i32imm);
     let DecoderMethod = "DecodeMEMri";
+    let ParserMatchClass = memoperand;
   }
   // For instructions that can only access the lower 16 registers
   def MEMqq : Operand<i32> {
