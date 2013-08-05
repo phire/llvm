@@ -664,11 +664,11 @@ defm SUBSCALE_8 : Scale<0xc70, "subscale", 8, sub>;
 
 // Memory Instructions - No Codegen
 // Conditional with indexed/displacement
-def LDWrrr : RRR<0xa00, "ldw", []>;
-def LDWrri : RRI<0xa00, "ldw", []>; // FIXME: Docs say the offset is unsigned,
+def LDWrrr : RRR<0xa00, "ld", []>;
+def LDWrri : RRI<0xa00, "ld", []>; // FIXME: Docs say the offset is unsigned,
                                     // but I've done signed here. Is this right?
-def STWrrr : RRR<0xa02, "stw", []>;
-def STWrri : RRI<0xa02, "stw", []>; 
+def STWrrr : RRR<0xa02, "st", []>;
+def STWrri : RRI<0xa02, "st", []>; 
 
 def LDHrrr : RRR<0xa04, "ldh", []>;
 def LDHrri : RRI<0xa04, "ldh", []>; 
@@ -685,8 +685,8 @@ def LDHSrri : RRI<0xa0c, "ldhs", []>;
 def STHSrrr : RRR<0xa0e, "sths", []>;
 def STHSrri : RRI<0xa0e, "sths", []>;
 
-def LDWrrD : RR0<0xa40, "ldw", [], "ldw$Cond $Rd, --(${Ra})">;
-def STWrrD : RR0<0xa42, "stw", [], "stw$Cond $Rd, --(${Ra})">;
+def LDWrrD : RR0<0xa40, "ld", [], "ld$Cond $Rd, --(${Ra})">;
+def STWrrD : RR0<0xa42, "st", [], "st$Cond $Rd, --(${Ra})">;
 def LDHrrD : RR0<0xa44, "ldh", [], "ldh$Cond $Rd, --(${Ra})">;
 def STHrrD : RR0<0xa46, "sth", [], "sth$Cond $Rd, --(${Ra})">;
 def LDBrrD : RR0<0xa48, "ldb", [], "ldb$Cond $Rd, --(${Ra})">;
@@ -694,8 +694,8 @@ def STBrrD : RR0<0xa4a, "stb", [], "stb$Cond $Rd, --(${Ra})">;
 def LDHSrrD : RR0<0xa4c, "ldhs", [], "ldhs$Cond $Rd, --(${Ra})">;
 def STHSrrD : RR0<0xa4e, "sths", [], "sths$Cond $Rd, --(${Ra})">;
 
-def LDWrrI : RR0<0xa50, "ldw", [], "ldw$Cond $Rd, (${Ra})++">;
-def STWrrI : RR0<0xa52, "stw", [], "stw$Cond $Rd, (${Ra})++">;
+def LDWrrI : RR0<0xa50, "ld", [], "ld$Cond $Rd, (${Ra})++">;
+def STWrrI : RR0<0xa52, "st", [], "st$Cond $Rd, (${Ra})++">;
 def LDHrrI : RR0<0xa54, "ldh", [], "ldh$Cond $Rd, (${Ra})++">;
 def STHrrI : RR0<0xa56, "sth", [], "sth$Cond $Rd, (${Ra})++">;
 def LDBrrI : RR0<0xa58, "ldb", [], "ldb$Cond $Rd, (${Ra})++">;
@@ -704,8 +704,8 @@ def LDHSrrI : RR0<0xa5c, "ldhs", [], "ldhs$Cond $Rd, (${Ra})++">;
 def STHSrrI : RR0<0xa5e, "sths", [], "sths$Cond $Rd, (${Ra})++">;
 
 // 27 bit offsets
-def LDWri27  : RI27<0xe6, 0, "ldw", []>;
-def STWri27  : RI27<0xe6, 1, "stw", []>;
+def LDWri27  : RI27<0xe6, 0, "ld", []>;
+def STWri27  : RI27<0xe6, 1, "st", []>;
 def LDHri27  : RI27<0xe6, 2, "ldh", []>;
 def STHri27  : RI27<0xe6, 3, "sth", []>;
 def LDBri27  : RI27<0xe6, 4, "ldb", []>;
@@ -713,8 +713,8 @@ def STBri27  : RI27<0xe6, 5, "stb", []>;
 def LDHSri27 : RI27<0xe6, 6, "ldhs", []>;
 def STHSri27 : RI27<0xe6, 7, "sths", []>;
 
-def LDW_PCi27  : PCI27<0xe7, 0, "ldw", []>;
-def STW_PCi27  : PCI27<0xe7, 1, "stw", []>;
+def LDW_PCi27  : PCI27<0xe7, 0, "ld", []>;
+def STW_PCi27  : PCI27<0xe7, 1, "st", []>;
 def LDH_PCi27  : PCI27<0xe7, 2, "ldh", []>;
 def STH_PCi27  : PCI27<0xe7, 3, "sth", []>;
 def LDB_PCi27  : PCI27<0xe7, 4, "ldb", []>;
