@@ -189,7 +189,19 @@ public:
   virtual bool isMem() const LLVM_OVERRIDE {
     return Kind == KindMem;
   }
-  
+  bool isMemInc() const {
+    return isMem() && !Mem.Index && !Mem.Disp && 
+           Mem.Update == PostIncrement;
+  }
+  bool isMemDec() const {
+    return isMem() && !Mem.Index && !Mem.Disp && 
+           Mem.Update == PreDecrement;
+  }
+  bool isMemOffset() const {
+     return isMem() && Mem.Update == None;
+  }
+
+
   // Override MCParsedAsmOperand.
   virtual SMLoc getStartLoc() const LLVM_OVERRIDE { return StartLoc; }
   virtual SMLoc getEndLoc() const LLVM_OVERRIDE { return EndLoc; }
@@ -203,12 +215,15 @@ public:
     Inst.addOperand(MCOperand::CreateReg(getReg()));
   }
   void addMemOperands(MCInst &Inst, unsigned N) const {
-    //assert((!Mem.Index && !Mem.Disp) && N == 1 && "Invalid number of operands");
-    //assert((!Mem.Index || !Mem.Disp) && (&& N == 2 && "Invalid number of operands");
+    assert((N == 1) && "Invalid number of operands");
+    Inst.addOperand(MCOperand::CreateReg(Mem.Base));
+  }
+  void addMemOffsetOperands(MCInst &Inst, unsigned N) const {
+    assert((N == 2) && "Invalid number of operands");
     Inst.addOperand(MCOperand::CreateReg(Mem.Base));
     if (Mem.Index)
       Inst.addOperand(MCOperand::CreateReg(Mem.Index));
-    if (Mem.Disp)
+    else
       addExpr(Inst, Mem.Disp);
   }
   void addImmOperands(MCInst &Inst, unsigned N) const {
@@ -421,6 +436,35 @@ InstructionIsConditional(StringRef Mnemonic, int numOperands,
   case 1:
     return (Mnemonic == "b" && !Operands[1]->isReg());
   case 2:
+    if(StringSwitch<bool>(Mnemonic)
+       .Case("ld", true)
+       .Case("st", true)
+       .Case("ldh", true)
+       .Case("sth", true)
+       .Case("ldb", true)
+       .Case("stb", true)
+       .Case("ldhs", true)
+       .Case("sths", true)
+       .Default(false)) {
+      // How on earth am I going to do this???
+      // False
+         // 16 bit instructions:
+         // <w>=W, Low Reg Dest, Base is SP, Disp is S6 * 4 
+         //        Low Regs, no Offset 
+         // <w>=W, Low Regs, Disp is U4 * 4
+         //
+         // Base is PC
+         // Displacement is bigger than u5
+      // True
+         // PreDecrement/PostIncrement
+         // Index
+         // Displacements is U5 (Overlaps with Optionals)
+      // Optional (True if CondCode != always)
+         // Displacement is U5 & 0b11100, Size is Word and Low Regs
+         // Displacement is 0 and Low Regs
+      return ((VideocoreOperand*)Operands[2])->isMemDec() ||
+             ((VideocoreOperand*)Operands[2])->isMemInc();
+    }
     return StringSwitch<bool>(Mnemonic)
       .Case("mov", true)
       .Case("cmn", true)
@@ -539,13 +583,14 @@ parseMem(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
   SMLoc Loc = Parser.getTok().getLoc();
   // Starts with "(" or "--("
   if (getLexer().is(AsmToken::LParen) || getLexer().is(AsmToken::MinusMinus)) {
-    int Update = Parser.Lex().is(AsmToken::MinusMinus) ? 
+    int Update = getLexer().is(AsmToken::MinusMinus) ? 
                  VideocoreOperand::PreDecrement : 
                  VideocoreOperand::None;
     unsigned Base;
-    unsigned Index;
-    const MCExpr *Disp;
+    unsigned Index = 0;
+    const MCExpr *Disp = NULL;
 
+    Parser.Lex();
     // If needed, eat '('
     if(Update == VideocoreOperand::PreDecrement) {
       if(getLexer().isNot(AsmToken::LParen)) {
@@ -578,12 +623,14 @@ parseMem(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
       return MatchOperand_ParseFail;
     }
     Parser.Lex();
+
     if (getLexer().is(AsmToken::PlusPlus)) {
       if (Update == VideocoreOperand::PreDecrement) {
         // You can't both increment and decrement
         Error(Parser.getTok().getLoc(), "unexpected '++'");
         return MatchOperand_ParseFail;
       }
+      Parser.Lex();
       Update = VideocoreOperand::PostIncrement;
     }
     Operands.push_back(VideocoreOperand::createMem(Base, Index, 
