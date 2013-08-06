@@ -155,3 +155,78 @@ printCondCodeOperand(const MCInst *MI, int opNum, raw_ostream &O) {
 
   O << VCCondCodeToString(static_cast<VCCC::CondCodes>(MO.getImm()));
 }
+
+void VideocoreInstPrinter::
+printVector(const MCInst *MI, int opNum, raw_ostream &O) {
+  const MCOperand &MO = MI->getOperand(opNum);
+
+  unsigned bits = MO.getImm();
+  assert(bits < 0x3bf && "Vector Operand too large");
+
+  unsigned type = (bits & 0x3c0) >> 6;
+  if (type == 0xe) { // Nop vector operand
+    O << "-";
+    return;
+  }
+
+  unsigned X, Y, width;
+  char Dir;
+  if ((type & 1) == 0) {
+    // Horizontal
+    Dir = 'H';
+    Y = bits & 0x3f;
+    switch (type >> 1) {
+      case 0: width = 8;  X = 0;  break;
+      case 1: width = 8;  X = 16; break;
+      case 2: width = 8;  X = 32; break;
+      case 3: width = 8;  X = 48; break;
+      case 4: width = 16; X = 0;  break;
+      case 5: width = 16; X = 32; break;
+      case 6: width = 32; X = 0;  break;
+    }
+  } else {
+    // Vertical
+    Dir = 'Y';
+    unsigned column = bits & 0xf;
+    Y = (bits & 0x30);
+    switch (type >> 1) {
+      case 0: width = 8;  X = 0  + column; break;
+      case 1: width = 8;  X = 16 + column; break;
+      case 2: width = 8;  X = 32 + column; break;
+      case 3: width = 8;  X = 48 + column; break;
+      case 4: width = 16; X = 0  + column; break;
+      case 5: width = 16; X = 32 + column; break;
+      case 6: width = 32; X = 0  + column; break;
+    }
+  }
+
+  O << Dir;
+  if (width != 8)
+    O << width;
+  O << "(" << Y << ", " << X << ")";
+}
+
+void VideocoreInstPrinter::
+printVectorPred(const MCInst *MI, int opNum, raw_ostream &O) {
+  const MCOperand &MO = MI->getOperand(opNum);
+
+  switch (MO.getImm()) {
+    case 0: break;
+    case 2: O << " IFZ";  break;
+    case 3: O << " IFNZ"; break;
+    case 4: O << " IFN";  break;
+    case 5: O << " IFNN"; break;
+    case 6: O << " IFC";  break;
+    case 7: O << " IFNC"; break;
+    default: llvm_unreachable("Invalid Vector Predicate");
+  }
+}
+
+void VideocoreInstPrinter::
+printSetF(const MCInst *MI, int opNum, raw_ostream &O) {
+  const MCOperand &MO = MI->getOperand(opNum);
+
+  if (MO.getImm()) {
+    O << " SETF";
+  }
+}
