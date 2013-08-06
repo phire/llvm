@@ -43,6 +43,10 @@ private:
   void printU32ImmOperand(const MCInst *MI, int opNum, raw_ostream &O);
   void printMemOperand(const MCInst *MI, int opNum, raw_ostream &O);
   void printCondCodeOperand(const MCInst *MI, int opNum, raw_ostream &O);
+
+  void printVector(const MCInst *MI, int opNum, raw_ostream &O);
+  void printVectorPred(const MCInst *MI, int opNum, raw_ostream &O);
+  void printSetF(const MCInst *MI, int opNum, raw_ostream &O);
 };
 }
 

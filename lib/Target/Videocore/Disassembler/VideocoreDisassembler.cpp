@@ -59,37 +59,6 @@ private:
 };
 
 // Functions used by TableGen Disassembler
-
-static DecodeStatus DecodeLowRegRegisterClass(MCInst &Inst,
-                                              unsigned RegNo,
-                                              uint64_t Address,
-                                              const void *Decoder) {
-  if (RegNo > 16)
-    return MCDisassembler::Fail;
-
-  const VideocoreDisassembler *Dis =
-                     static_cast<const VideocoreDisassembler*>(Decoder);
-
-  unsigned Reg = Dis->getReg(VC::LowRegRegClassID, RegNo);
-  Inst.addOperand(MCOperand::CreateReg(Reg));
-  return MCDisassembler::Success;
-}
-
-static DecodeStatus DecodeIntRegRegisterClass(MCInst &Inst,
-                                                 unsigned RegNo,
-                                                 uint64_t Address,
-                                                 const void *Decoder) {
-  if (RegNo > 30)
-    return MCDisassembler::Fail;
-
-  const VideocoreDisassembler *Dis =
-                   static_cast<const VideocoreDisassembler*>(Decoder);
-
-  unsigned Reg = Dis->getReg(VC::IntRegRegClassID, RegNo);
-  Inst.addOperand(MCOperand::CreateReg(Reg));
-  return MCDisassembler::Success;
-}
-
 static DecodeStatus DecodeAllRegRegisterClass(MCInst &Inst,
                                                  unsigned RegNo,
                                                  uint64_t Address,
@@ -103,6 +72,36 @@ static DecodeStatus DecodeAllRegRegisterClass(MCInst &Inst,
   unsigned Reg = Dis->getReg(VC::AllRegRegClassID, RegNo);
   Inst.addOperand(MCOperand::CreateReg(Reg));
   return MCDisassembler::Success;
+}
+
+static DecodeStatus DecodeLowRegRegisterClass(MCInst &Inst,
+                                              unsigned RegNo,
+                                              uint64_t Address,
+                                              const void *Decoder) {
+  if (RegNo > 16)
+    return MCDisassembler::Fail;
+
+  return DecodeAllRegRegisterClass(Inst, RegNo, Address, Decoder);
+}
+
+static DecodeStatus DecodeIntRegRegisterClass(MCInst &Inst,
+                                                 unsigned RegNo,
+                                                 uint64_t Address,
+                                                 const void *Decoder) {
+  if (RegNo > 30)
+    return MCDisassembler::Fail;
+
+  return DecodeAllRegRegisterClass(Inst, RegNo, Address, Decoder);
+}
+
+static DecodeStatus DecodeScalar8RegisterClass(MCInst &Inst,
+                                                 unsigned RegNo,
+                                                 uint64_t Address,
+                                                 const void *Decoder) {
+  if (RegNo > 7)
+    return MCDisassembler::Fail;
+
+  return DecodeAllRegRegisterClass(Inst, RegNo, Address, Decoder);
 }
 
 // xxxx xxxo xxxd dddd ssss sooo oooo oooo
@@ -166,9 +165,20 @@ static DecodeStatus readInstruction(const MemoryObject &region,
       return MCDisassembler::Success;
     }
   }
-  if ((word & 0xf000) == 0xf000) { // 1111 Yxxx xxxx xxxx - vector 48/80 bits
+  if ((word & 0xf800) == 0xf000) { // 1111 0xxx xxxx xxxx - vector 48 bits
+    if (region.readBytes(address+2, 4, (uint8_t*)bytes, NULL) != -1) {
+      insn = ((uint64_t)bytes[1]) << 24 |
+              bytes[0] << 16 |
+              bytes[3] << 8  |
+              bytes[2];
+      insn |= ((uint64_t)word) << 32;
+      size = 6;
+      return MCDisassembler::Success; // Unimplemented
+    }
+  }
+  if ((word & 0xf000) == 0xf000) { // 1111 1xxx xxxx xxxx - vector 48 bits
     // Vector instruction
-    size = (word & 0x0800) ? 10 : 6;
+    size = 10;
     return MCDisassembler::Fail; // Unimplemented
   }
 

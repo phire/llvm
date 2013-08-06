@@ -9,7 +9,7 @@
 
 class InstVC<int sz, dag outs, dag ins, string asmstr, list<dag> pattern>
  : Instruction {
-  field bits<48> Inst;
+  field bits<80> Inst;
 
   let Namespace = "VC";
   int Size = sz;
@@ -19,7 +19,7 @@ class InstVC<int sz, dag outs, dag ins, string asmstr, list<dag> pattern>
   let AsmString   = asmstr;
   let Pattern = pattern;
 
-  field bits<48> SoftFail = 0;
+  field bits<80> SoftFail = 0;
 }
 
 class InstVC16<dag outs, dag ins, string asmstr, list<dag> pattern>
@@ -31,6 +31,8 @@ class InstVC32<dag outs, dag ins, string asmstr, list<dag> pattern>
 class InstVC48<dag outs, dag ins, string asmstr, list<dag> pattern>
   : InstVC<6, outs, ins, asmstr, pattern>;
 
+class InstVC80<dag outs, dag ins, string asmstr, list<dag> pattern> 
+  : InstVC<10, outs, ins, asmstr, pattern>;
 
 //===----------------------------------------------------------------------===//
 // 16 bit instruction classes in the Videocore

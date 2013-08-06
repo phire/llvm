@@ -200,6 +200,19 @@ public:
      return isMem() && Mem.Update == None;
   }
 
+  bool isVector() const {
+     llvm_unreachable("unimplemented");
+     return false;
+  }
+  bool isVectorPred() const {
+     llvm_unreachable("unimplemented");
+     return false;
+  }
+  bool isSetF() const {
+     llvm_unreachable("unimplemented");
+     return false;
+  }
+
 
   // Override MCParsedAsmOperand.
   virtual SMLoc getStartLoc() const LLVM_OVERRIDE { return StartLoc; }
@@ -245,6 +258,16 @@ public:
     assert(N == 1 && "Invalid number of operands");
     Inst.addOperand(MCOperand::CreateImm(CondCode));
   }
+  void addVector(MCInst &Inst, unsigned N) const {
+    llvm_unreachable("unimplemented");
+  }
+  void addVectorPred(MCInst &Inst, unsigned N) const {
+    llvm_unreachable("unimplemented");
+  }
+  void addSetF(MCInst &Inst, unsigned N) const {
+    llvm_unreachable("unimplemented");
+  }
+
 
 };
 }
@@ -307,6 +330,20 @@ public:
 
   OperandMatchResultTy
   parseMem(SmallVectorImpl<MCParsedAsmOperand*> &Operands);
+  OperandMatchResultTy
+  parseVector(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
+    llvm_unreachable("unimplemented");
+  }
+  OperandMatchResultTy
+  parseVectorPred(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
+    llvm_unreachable("unimplemented");
+  }
+  OperandMatchResultTy
+  parseSetF(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
+    llvm_unreachable("unimplemented");
+  }
+
+
 };
 
 #define GET_REGISTER_MATCHER

@@ -14,7 +14,6 @@
 //===----------------------------------------------------------------------===//
 // Videocore specific DAG Nodes.
 //===----------------------------------------------------------------------===//
-
 //  These are target-independent nodes, but have target-specific formats.
 def SDT_VCCallSeqStart : SDCallSeqStart<[ SDTCisVT<0, i32> ]>;
 def SDT_VCCallSeqEnd   : SDCallSeqEnd<[ SDTCisVT<0, i32>,
@@ -864,3 +863,7 @@ def : Pat<(xor IntReg:$r, MASKi:$imm), (BCHGrri IntReg:$r, BITi:$imm)>;
 // llvm prefers adding negitave constants instead of using our smaller sub.
 // So we match SUBqi to match additions with small negitave numbers
 def : Pat<(add LowReg:$r, NEGu5:$imm), (SUBqi LowReg:$r, NEGu5:$imm)>;
+
+
+include "VideocoreInstrVector.td"
+
