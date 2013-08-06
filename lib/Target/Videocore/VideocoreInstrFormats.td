@@ -99,12 +99,12 @@ class R_I<bits<12> op, string mnemonic, list<dag> pattern>
   let Inst{5-0} = imm;
 }
 
-class RR0<bits<12> op, string mnemonic, list<dag> pattern,
-          string asmstr=!strconcat(mnemonic, "$Cond $Rd, $Ra")>
-  : _R__<op, (ins IntReg:$Ra, cond_code:$Cond), asmstr, pattern> {
-  bits<5> Ra;
+class MEMupdate<bits<12> op, string mnemonic, list<dag> pattern, Operand type>
+  : _R__<op, (ins type:$mem, cond_code:$Cond), 
+         !strconcat(mnemonic, "$Cond $Rd, $mem"), pattern> {
+  bits<5> mem;
 
-  let Inst{15-11} = Ra;
+  let Inst{15-11} = mem;
   let Inst{6-0} = 0;
 }
 

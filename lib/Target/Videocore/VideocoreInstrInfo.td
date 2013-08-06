@@ -192,21 +192,33 @@ def NEGu5 : ComplexPattern<i32, 1, "SelectNEGu5", [imm]>;
 def ADDRrr : ComplexPattern<i32, 2, "SelectADDRrr", [], []>;
 def ADDRri : ComplexPattern<i32, 2, "SelectADDRri", [frameindex], []>;
 
-def memoperand : AsmOperandClass {
-  let Name = "Mem";
+class MemOperand<string Type=""> : AsmOperandClass {
+  let Name = "Mem"#Type;
   let ParserMethod = "parseMem";
   let RenderMethod = "addMemOperands";
+}
+def MemOperandOffset : MemOperand<"Offset"> {
+  let RenderMethod = "addMemOffsetOperands";
 }
 
 // Address operands
 let PrintMethod = "printMemOperand" in {
   def MEMrr : Operand<i32> {
     let MIOperandInfo = (ops IntReg, IntReg);
+    let ParserMatchClass = MemOperandOffset;
   }
   def MEMri : Operand<i32> {
     let MIOperandInfo = (ops IntReg, i32imm);
     let DecoderMethod = "DecodeMEMri";
-    let ParserMatchClass = memoperand;
+    let ParserMatchClass = MemOperandOffset;
+  }
+  def MEMdec : Operand<i32> {
+    let MIOperandInfo = (ops IntReg);
+    let ParserMatchClass = MemOperand<"Dec">;
+  }
+  def MEMinc : Operand<i32> {
+    let MIOperandInfo = (ops IntReg);
+    let ParserMatchClass = MemOperand<"Inc">;
   }
   // For instructions that can only access the lower 16 registers
   def MEMqq : Operand<i32> {
@@ -685,23 +697,25 @@ def LDHSrri : RRI<0xa0c, "ldhs", []>;
 def STHSrrr : RRR<0xa0e, "sths", []>;
 def STHSrri : RRI<0xa0e, "sths", []>;
 
-def LDWrrD : RR0<0xa40, "ld", [], "ld$Cond $Rd, --(${Ra})">;
-def STWrrD : RR0<0xa42, "st", [], "st$Cond $Rd, --(${Ra})">;
-def LDHrrD : RR0<0xa44, "ldh", [], "ldh$Cond $Rd, --(${Ra})">;
-def STHrrD : RR0<0xa46, "sth", [], "sth$Cond $Rd, --(${Ra})">;
-def LDBrrD : RR0<0xa48, "ldb", [], "ldb$Cond $Rd, --(${Ra})">;
-def STBrrD : RR0<0xa4a, "stb", [], "stb$Cond $Rd, --(${Ra})">;
-def LDHSrrD : RR0<0xa4c, "ldhs", [], "ldhs$Cond $Rd, --(${Ra})">;
-def STHSrrD : RR0<0xa4e, "sths", [], "sths$Cond $Rd, --(${Ra})">;
+// Condtional with pre-decrement
+def LDWdec  : MEMupdate<0xa40, "ld",   [], MEMdec>;
+def STWdec  : MEMupdate<0xa42, "st",   [], MEMdec>;
+def LDHdec  : MEMupdate<0xa44, "ldh",  [], MEMdec>;
+def STHdec  : MEMupdate<0xa46, "sth",  [], MEMdec>;
+def LDBdec  : MEMupdate<0xa48, "ldb",  [], MEMdec>;
+def STBdec  : MEMupdate<0xa4a, "stb",  [], MEMdec>;
+def LDHSdec : MEMupdate<0xa4c, "ldhs", [], MEMdec>;
+def STHSdec : MEMupdate<0xa4e, "sths", [], MEMdec>;
 
-def LDWrrI : RR0<0xa50, "ld", [], "ld$Cond $Rd, (${Ra})++">;
-def STWrrI : RR0<0xa52, "st", [], "st$Cond $Rd, (${Ra})++">;
-def LDHrrI : RR0<0xa54, "ldh", [], "ldh$Cond $Rd, (${Ra})++">;
-def STHrrI : RR0<0xa56, "sth", [], "sth$Cond $Rd, (${Ra})++">;
-def LDBrrI : RR0<0xa58, "ldb", [], "ldb$Cond $Rd, (${Ra})++">;
-def STBrrI : RR0<0xa5a, "stb", [], "stb$Cond $Rd, (${Ra})++">;
-def LDHSrrI : RR0<0xa5c, "ldhs", [], "ldhs$Cond $Rd, (${Ra})++">;
-def STHSrrI : RR0<0xa5e, "sths", [], "sths$Cond $Rd, (${Ra})++">;
+// Conditional with post-increment
+def LDWinc  : MEMupdate<0xa50, "ld",   [], MEMinc>;
+def STWinc  : MEMupdate<0xa52, "st",   [], MEMinc>;
+def LDHinc  : MEMupdate<0xa54, "ldh",  [], MEMinc>;
+def STHinc  : MEMupdate<0xa56, "sth",  [], MEMinc>;
+def LDBinc  : MEMupdate<0xa58, "ldb",  [], MEMinc>;
+def STBinc  : MEMupdate<0xa5a, "stb",  [], MEMinc>;
+def LDHSinc : MEMupdate<0xa5c, "ldhs", [], MEMinc>;
+def STHSinc : MEMupdate<0xa5e, "sths", [], MEMinc>;
 
 // 27 bit offsets
 def LDWri27  : RI27<0xe6, 0, "ld", []>;
