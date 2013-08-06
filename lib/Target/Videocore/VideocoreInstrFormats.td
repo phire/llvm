@@ -31,7 +31,7 @@ class InstVC32<dag outs, dag ins, string asmstr, list<dag> pattern>
 class InstVC48<dag outs, dag ins, string asmstr, list<dag> pattern>
   : InstVC<6, outs, ins, asmstr, pattern>;
 
-class InstVC80<dag outs, dag ins, string asmstr, list<dag> pattern> 
+class InstVC80<dag outs, dag ins, string asmstr, list<dag> pattern>
   : InstVC<10, outs, ins, asmstr, pattern>;
 
 //===----------------------------------------------------------------------===//
