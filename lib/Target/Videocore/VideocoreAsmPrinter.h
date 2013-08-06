@@ -1,4 +1,4 @@
-//===------ VideocoreAsmPrinter.h - Videocore LLVM Assembly Printer -------===//
+//=== VideocoreAsmPrinter.h - Videocore LLVM Assembly Printer --*- C++ -*--===//
 //
 //                     The LLVM Compiler Infrastructure
 //

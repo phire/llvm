@@ -45,8 +45,9 @@ static MCRegisterInfo *createVideocoreMCRegisterInfo(StringRef TT) {
   return X;
 }
 
-static MCSubtargetInfo *createVideocoreMCSubtargetInfo(StringRef TT, StringRef CPU,
-                                                   StringRef FS) {
+static MCSubtargetInfo *createVideocoreMCSubtargetInfo(StringRef TT,
+                                                       StringRef CPU,
+                                                       StringRef FS) {
   MCSubtargetInfo *X = new MCSubtargetInfo();
   InitVideocoreMCSubtargetInfo(X, TT, CPU, FS);
   return X;
@@ -63,9 +64,10 @@ static MCAsmInfo *createVideocoreMCAsmInfo(const Target &T, StringRef TT) {
   return MAI;
 }
 
-static MCCodeGenInfo *createVideocoreMCCodeGenInfo(StringRef TT, Reloc::Model RM,
-                                               CodeModel::Model CM,
-                                               CodeGenOpt::Level OL) {
+static MCCodeGenInfo *createVideocoreMCCodeGenInfo(StringRef TT,
+                                                   Reloc::Model RM,
+                                                   CodeModel::Model CM,
+                                                   CodeGenOpt::Level OL) {
   MCCodeGenInfo *X = new MCCodeGenInfo();
   X->InitMCCodeGenInfo(RM, CM, OL);
   return X;
@@ -102,19 +104,24 @@ extern "C" void LLVMInitializeVideocoreTargetMC() {
                                         createVideocoreMCCodeGenInfo);
 
   // Register the MC instruction info.
-  TargetRegistry::RegisterMCInstrInfo(TheVideocoreTarget, createVideocoreMCInstrInfo);
+  TargetRegistry::RegisterMCInstrInfo(TheVideocoreTarget,
+                                      createVideocoreMCInstrInfo);
 
   // Register the MC register info.
-  TargetRegistry::RegisterMCRegInfo(TheVideocoreTarget, createVideocoreMCRegisterInfo);
+  TargetRegistry::RegisterMCRegInfo(TheVideocoreTarget,
+                                    createVideocoreMCRegisterInfo);
 
   // Register the MC code emitter
-  TargetRegistry::RegisterMCCodeEmitter(TheVideocoreTarget, createVideocoreMCCodeEmitter);
+  TargetRegistry::RegisterMCCodeEmitter(TheVideocoreTarget,
+                                        createVideocoreMCCodeEmitter);
 
   // Register the MC object streamer
-  TargetRegistry::RegisterMCObjectStreamer(TheVideocoreTarget, createMCStreamer);
+  TargetRegistry::RegisterMCObjectStreamer(TheVideocoreTarget,
+                                           createMCStreamer);
 
   // Register the asm backend.
-  TargetRegistry::RegisterMCAsmBackend(TheVideocoreTarget, createVideocoreAsmBackend);
+  TargetRegistry::RegisterMCAsmBackend(TheVideocoreTarget,
+                                       createVideocoreAsmBackend);
 
 
   // Register the MC subtarget info.

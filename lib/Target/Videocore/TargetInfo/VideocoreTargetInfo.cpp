@@ -13,6 +13,7 @@ using namespace llvm;
 
 Target llvm::TheVideocoreTarget;
 
-extern "C" void LLVMInitializeVideocoreTargetInfo() { 
-  RegisterTarget<Triple::videocore> X(TheVideocoreTarget, "videocore", "Videocore");
+extern "C" void LLVMInitializeVideocoreTargetInfo() {
+  RegisterTarget<Triple::videocore> X(TheVideocoreTarget,
+                                      "videocore", "Videocore");
 }

@@ -1,4 +1,4 @@
-//===-- VideocoreISelDAGToDAG.cpp - A dag to dag inst selector for Videocore ------===//
+//=== VideocoreISelDAGToDAG.cpp - A dag to dag inst selector for Videocore ===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -30,8 +30,8 @@ using namespace llvm;
 ///
 namespace {
 class VideocoreDAGToDAGISel : public SelectionDAGISel {
-  /// Subtarget - Keep a pointer to the Videocore Subtarget around so that we can
-  /// make the right decision when generating code for different targets.
+  /// Subtarget - Keep a pointer to the Videocore Subtarget around so that we
+  /// can make the right decision when generating code for different targets.
   VideocoreTargetMachine& TM;
 public:
   explicit VideocoreDAGToDAGISel(VideocoreTargetMachine &tm)
@@ -100,7 +100,8 @@ bool VideocoreDAGToDAGISel::SelectADDRri(SDValue Addr,
   return true;
 }
 
-bool VideocoreDAGToDAGISel::SelectADDRrr(SDValue Addr, SDValue &R1, SDValue &R2) {
+bool
+VideocoreDAGToDAGISel::SelectADDRrr(SDValue Addr, SDValue &R1, SDValue &R2) {
   if (Addr.getOpcode() == ISD::FrameIndex) return false;
   if (Addr.getOpcode() == ISD::TargetExternalSymbol ||
       Addr.getOpcode() == ISD::TargetGlobalAddress)
@@ -164,7 +165,8 @@ bool VideocoreDAGToDAGISel::SelectMASKi(SDValue N, SDValue &imm) {
 	return false;
 }
 
-// Match small negitave constants that 
+/// Match small negitave constants that could fit in a unsinged number if
+/// the operation was inverted.
 bool VideocoreDAGToDAGISel::SelectNEGu5(SDValue N, SDValue &imm) {
 	if(ConstantSDNode *CN = dyn_cast<ConstantSDNode>(N)) {
 		int v = CN->getSExtValue();
@@ -175,9 +177,6 @@ bool VideocoreDAGToDAGISel::SelectNEGu5(SDValue N, SDValue &imm) {
 	}
 	return false;
 }
-
-
-
 
 SDNode *VideocoreDAGToDAGISel::Select(SDNode *N) {
   //DebugLoc dl = N->getDebugLoc();

@@ -1,4 +1,4 @@
-//===-- VideocoreMCInstLower.cpp - Convert Videocore MachineInstr to MCInst --===//
+//===- VideocoreMCInstLower.cpp - Convert Videocore MachineInstr to MCInst ===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file contains code to lower Videocore MachineInstrs to their corresponding
-// MCInst records.
+// This file contains code to lower Videocore MachineInstrs to their
+// corresponding MCInst records.
 //
 //===----------------------------------------------------------------------===//
 
@@ -69,7 +69,7 @@ MCOperand VideocoreMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
   assert(Offset > 0);
 
   const MCConstantExpr *OffsetExpr =  MCConstantExpr::Create(Offset, *Ctx);
-  const MCBinaryExpr *AddExpr = MCBinaryExpr::CreateAdd(MCSym, OffsetExpr, *Ctx);
+  const MCBinaryExpr *AddExpr= MCBinaryExpr::CreateAdd(MCSym, OffsetExpr, *Ctx);
   return MCOperand::CreateExpr(AddExpr);
 }
 

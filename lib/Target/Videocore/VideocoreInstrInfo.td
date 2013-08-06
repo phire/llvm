@@ -1,4 +1,4 @@
-//=== VideooreInstrInfo.td - Target Description for Videocore *- tablegen -*-===//
+//=== VideooreInstrInfo.td - Videocore Target Description --*- tablegen -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -60,7 +60,7 @@ def VCcmn : PatFrag<(ops node:$lhs, node:$rhs),
 
 def bic   : PatFrag<(ops node:$lhs, node:$rhs),
                     (and node:$lhs, (xor node:$rhs, -1))>;
-def rsub  : PatFrag<(ops node:$lhs, node:$rhs), 
+def rsub  : PatFrag<(ops node:$lhs, node:$rhs),
                     (sub node:$rhs, node:$lhs)>;
 def bmask : PatFrag<(ops node:$lhs, node:$rhs),
                     (and node:$lhs, (add (shl 1, node:$rhs), -1))>;
@@ -242,7 +242,8 @@ def InlineJT32 : Operand<i32> {
   let PrintMethod = "printInlineJT32";
 }
 
-def addr : ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
+def addr : ComplexPattern<iPTR, 2, "SelectAddr",
+                          [frameindex], [SDNPWantParent]>;
 
 //===----------------------------------------------------------------------===//
 // Instruction format superclass.
@@ -255,7 +256,7 @@ include "VideocoreInstrFormats.td"
 //===----------------------------------------------------------------------===//
 
 // Odd numbered, two input operations
-multiclass ArithLogicO3<int opc, string asmstr, SDPatternOperator node, 
+multiclass ArithLogicO3<int opc, string asmstr, SDPatternOperator node,
                         SDPatternOperator immnode=node> {
   def qq : ArithLogicQQ<opc, asmstr,
         [(set LowReg:$Rd, (node LowReg:$src, LowReg:$Rs))]>;
@@ -265,20 +266,20 @@ multiclass ArithLogicO3<int opc, string asmstr, SDPatternOperator node,
 		[(set IntReg:$Rd, (immnode IntReg:$src, (i32 immU32:$imm)))]>;
   def rrr : RRR<!add(0xc00, !shl(opc, 1)), asmstr,
         [(set IntReg:$Rd, (node IntReg:$Ra, IntReg:$Rb))]>;
-  def rri : RRI<!add(0xc00, !shl(opc, 1)), asmstr, 
+  def rri : RRI<!add(0xc00, !shl(opc, 1)), asmstr,
 		[(set IntReg:$Rd, (immnode IntReg:$Ra, (i32 immS6:$imm)))]>;
 }
 
 // Even numbered, two input operations
 multiclass ArithLogicE3<int opc, string asmstr, SDPatternOperator node,
-                        SDPatternOperator immnode=node> 
+                        SDPatternOperator immnode=node>
  : ArithLogicO3<opc, asmstr, node, immnode> {
   def qi : ArithLogicQI<opc, asmstr,
         [(set LowReg:$Rd, (immnode LowReg:$src, (i32 immU5:$imm)))]>;
 }
 
 // Odd numbered, one input operations
-multiclass ArithLogicO2<int opc, string asmstr, SDPatternOperator node, 
+multiclass ArithLogicO2<int opc, string asmstr, SDPatternOperator node,
                         SDPatternOperator immnode=node> {
   def qq : ArithLogicQQ_1<opc, asmstr,
         [(set LowReg:$Rd, (node LowReg:$Rs))]>;
@@ -288,13 +289,13 @@ multiclass ArithLogicO2<int opc, string asmstr, SDPatternOperator node,
 		[(set IntReg:$Rd, (immnode (i32 immU32:$imm)))]>;
   def r_r : R_R<!add(0xc00, !shl(opc, 1)), asmstr,
         [(set IntReg:$Rd, (node IntReg:$Rb))]>;
-  def r_i : R_I<!add(0xc00, !shl(opc, 1)), asmstr, 
+  def r_i : R_I<!add(0xc00, !shl(opc, 1)), asmstr,
 		[(set IntReg:$Rd, (immnode (i32 immS6:$imm)))]>;
 }
 
 // Even numbered, one input operations
-multiclass ArithLogicE2<int opc, string asmstr, SDPatternOperator node, 
-                        SDPatternOperator immnode=node> 
+multiclass ArithLogicE2<int opc, string asmstr, SDPatternOperator node,
+                        SDPatternOperator immnode=node>
  : ArithLogicO2<opc, asmstr, node, immnode> {
   def qi : ArithLogicQI_1<opc, asmstr,
         [(set LowReg:$Rd, (immnode (i32 immU5:$imm)))]>;
@@ -303,23 +304,23 @@ multiclass ArithLogicE2<int opc, string asmstr, SDPatternOperator node,
 // Add Scale operations
 multiclass AddScale<int opc, int shift> {
   let Constraints="$src = $Rd", DisableEncoding="$src" in {
-  def qq : _ArithLogicQQ<opc, (ins LowReg:$src, LowReg:$Rs), 
+  def qq : _ArithLogicQQ<opc, (ins LowReg:$src, LowReg:$Rs),
 		"addscale $Rd, $Rs shl "#shift,
         [(set LowReg:$Rd, (add LowReg:$src, (shl LowReg:$Rs, shift)))]> {
     let isConvertibleToThreeAddress = 1;
   }
-  def ri : _ArithLogicRI<opc, (ins IntReg:$src, immS16opnd:$imm), 
-		"addscale $Rd, $imm shl "#shift,
-		[(set IntReg:$Rd, (add IntReg:$src, (shl (i32 immS16:$imm), shift)))]>;
+  def ri : _ArithLogicRI<opc, (ins IntReg:$src, immS16opnd:$imm),
+        "addscale $Rd, $imm shl "#shift,
+	[(set IntReg:$Rd, (add IntReg:$src, (shl (i32 immS16:$imm), shift)))]>;
   def i32 : _ArithLogicI32<opc, (ins IntReg:$src, immU32opnd:$imm),
-		"addscale $Rd, $imm shl "#shift,
-		[(set IntReg:$Rd, (add IntReg:$src, (shl (i32 immU32:$imm), shift)))]>;
+	"addscale $Rd, $imm shl "#shift,
+	[(set IntReg:$Rd, (add IntReg:$src, (shl (i32 immU32:$imm), shift)))]>;
   }
   def rr : RRR<!add(0xc00, !shl(opc, 1)), "addscale",
-        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, shift)))], 
+        [(set IntReg:$Rd, (add IntReg:$Ra, (shl IntReg:$Rb, shift)))],
         "addscale$Cond $Rd, $Ra, $Rb shl "#shift>;
   def rri : RRI<!add(0xc00, !shl(opc, 1)), "addscale",
-		[(set IntReg:$Rd, (add IntReg:$Ra, (shl (i32 immS6:$imm), shift)))],
+	[(set IntReg:$Rd, (add IntReg:$Ra, (shl (i32 immS6:$imm), shift)))],
         "addscale$Cond $Rd, $Ra, $imm shl "#shift>;
 }
 // For the single even numbered addscale operation
@@ -327,9 +328,7 @@ multiclass AddScale_E<int opc, int shift> : AddScale<opc, shift> {
   let Constraints="$src = $Rd", DisableEncoding="$src" in {
   def qi : _ArithLogicQI<opc, (ins LowReg:$src, immU5opnd:$imm),
 		"addscale $Rd, $imm shl "#shift,
-        [(set LowReg:$Rd, (add LowReg:$src, (shl (i32 immU5:$imm), shift)))]> {
-            let isConvertibleToThreeAddress = 1;
-		}
+        [(set LowReg:$Rd, (add LowReg:$src, (shl (i32 immU5:$imm), shift)))]>;
   }
 }
 
@@ -366,7 +365,7 @@ def ADJCALLSTACKUP : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2),
 // Instructions
 //===----------------------------------------------------------------------===//
 
-def B32 : InstVC32<(outs), (ins brtarget:$imm24), 
+def B32 : InstVC32<(outs), (ins brtarget:$imm24),
 		"b $imm24", [(br bb:$imm24)]> {
 	bits<24> imm24;
 
@@ -381,8 +380,8 @@ def B32 : InstVC32<(outs), (ins brtarget:$imm24),
 	let hasDelaySlot=0;
 }
 
-def bcc : InstVC32<(outs), 
-		(ins cond_code:$Cond, brtarget:$imm24), 
+def bcc : InstVC32<(outs),
+		(ins cond_code:$Cond, brtarget:$imm24),
 		"b$Cond $imm24", [/*(VCbr_cc NZCV, (i32 imm:$Cond), bb:$imm24)*/]> {
 	bits<24> imm24;
     bits<4> Cond;
@@ -454,41 +453,41 @@ def CMPri : InstVC32<(outs), (ins IntReg:$Ra, immS16opnd:$imm), "cmp $Ra, $imm",
 
 
 /*
-def LDWqq  : LDST16<0, 0, 
+def LDWqq  : LDST16<0, 0,
 		(outs LowReg:$dst), (ins MEMq:$addr), "ld $dst, $addr",
 		 [(set LowReg:$dst, (load ADDRrr:$addr))]>;
 
-def LDBqq  : LDST16<1, 0, 
+def LDBqq  : LDST16<1, 0,
 		(outs LowReg:$dst), (ins MEMq:$addr), "ldb $dst, $addr",
 		 [(set LowReg:$dst, (zextloadi8 ADDRrr:$addr))]>;
 
-def LDHqq  : LDST16<2, 0, 
+def LDHqq  : LDST16<2, 0,
 		(outs LowReg:$dst), (ins MEMq:$addr), "ldh $dst, $addr",
 		 [(set LowReg:$dst, (zextloadi16 ADDRrr:$addr))]>;
 
-def LDHSqq : LDST16<3, 0, 
+def LDHSqq : LDST16<3, 0,
 		(outs LowReg:$dst), (ins MEMq:$addr), "ldhs $dst, $addr",
 		 [(set LowReg:$dst, (sextloadi16 ADDRrr:$addr))]>;
 
-def STWqq  : LDST16<0, 1, 
+def STWqq  : LDST16<0, 1,
 		(outs), (ins LowReg:$src, MEMq:$addr), "st $src, $addr",
 		 [(store LowReg:$src, ADDRrr:$addr)]>;
 
-def STBqq  : LDST16<1, 1, 
+def STBqq  : LDST16<1, 1,
 		(outs), (ins LowReg:$src, MEMq:$addr), "stb $src, $addr",
                 [(truncstorei8 LowReg:$src, ADDRrr:$addr)]>;
 
-def STHqq  : LDST16<2, 1, 
+def STHqq  : LDST16<2, 1,
 		(outs), (ins LowReg:$src, MEMq:$addr), "sth $src, $addr",
                  [(truncstorei16 LowReg:$src, ADDRrr:$addr)]>;
 
-def STHSqq : LDST16<3, 1, 
+def STHSqq : LDST16<3, 1,
 		(outs), (ins LowReg:$src, MEMqi:$addr), "sths $src, $addr",
                  [(truncstorei16 LowReg:$src, ADDRrr:$addr)]>;
 */
 
-def STWrri12 : InstVC32<(outs), (ins IntReg:$src, MEMri:$addr), "st $src, $addr",
-        [(store IntReg:$src, ADDRri:$addr)]> {
+def STWrri12 : InstVC32<(outs), (ins IntReg:$src, MEMri:$addr),
+                        "st $src, $addr", [(store IntReg:$src, ADDRri:$addr)]> {
     bits<5> Rd;
     bits<5> Rs;
     bits<12> offset;
@@ -594,7 +593,7 @@ def ADDrSPi : InstVC16<(outs IntReg:$Rd), (ins immSignedShl2:$imm),
   let Uses = [SP];
 }
 
-// 1011 01ss sssd dddd iiii iiii iiii iiii 
+// 1011 01ss sssd dddd iiii iiii iiii iiii
 // Also does pc reltive lea
 def ADDrri16 : InstVC32<(outs IntReg:$Rd), (ins AllReg:$Rs, immS16opnd:$imm),
         "add $Rd, $Rs, $imm",
@@ -623,7 +622,7 @@ def ADDrPCi32 : InstVC48<(outs IntReg:$Rd), (ins immU32opnd:$imm),
 }
 
 // Conditional Multiply Instructions  FIXME: no codegen
-def MULHDSSrrr : RRR<0xc40, "mulhd", [], "mulhd${Cond}.ss $Rd, $Ra, $Rb">; 
+def MULHDSSrrr : RRR<0xc40, "mulhd", [], "mulhd${Cond}.ss $Rd, $Ra, $Rb">;
 def MULHDSSrri : RRI<0xc40, "mulhd", [], "mulhd${Cond}.ss $Rd, $Ra, $imm">;
 def MULHDSUrrr : RRR<0xc42, "mulhd", [], "mulhd${Cond}.su $Rd, $Ra, $Rb">;
 def MULHDSUrri : RRI<0xc42, "mulhd", [], "mulhd${Cond}.su $Rd, $Ra, $imm">;
@@ -680,20 +679,20 @@ def LDWrrr : RRR<0xa00, "ld", []>;
 def LDWrri : RRI<0xa00, "ld", []>; // FIXME: Docs say the offset is unsigned,
                                     // but I've done signed here. Is this right?
 def STWrrr : RRR<0xa02, "st", []>;
-def STWrri : RRI<0xa02, "st", []>; 
+def STWrri : RRI<0xa02, "st", []>;
 
 def LDHrrr : RRR<0xa04, "ldh", []>;
-def LDHrri : RRI<0xa04, "ldh", []>; 
+def LDHrri : RRI<0xa04, "ldh", []>;
 def STHrrr : RRR<0xa06, "sth", []>;
-def STHrri : RRI<0xa06, "sth", []>; 
+def STHrri : RRI<0xa06, "sth", []>;
 
 def LDBrrr : RRR<0xa08, "ldb", []>;
-def LDBrri : RRI<0xa08, "ldb", []>; 
+def LDBrri : RRI<0xa08, "ldb", []>;
 def STBrrr : RRR<0xa0a, "stb", []>;
-def STBrri : RRI<0xa0a, "stb", []>; 
+def STBrri : RRI<0xa0a, "stb", []>;
 
 def LDHSrrr : RRR<0xa0c, "ldhs", []>;
-def LDHSrri : RRI<0xa0c, "ldhs", []>; 
+def LDHSrri : RRI<0xa0c, "ldhs", []>;
 def STHSrrr : RRR<0xa0e, "sths", []>;
 def STHSrri : RRI<0xa0e, "sths", []>;
 
@@ -864,4 +863,4 @@ def : Pat<(xor IntReg:$r, MASKi:$imm), (BCHGrri IntReg:$r, BITi:$imm)>;
 
 // llvm prefers adding negitave constants instead of using our smaller sub.
 // So we match SUBqi to match additions with small negitave numbers
-def : Pat<(add LowReg:$r, NEGu5:$imm), (SUBqi LowReg:$r, NEGu5:$imm)>; 
+def : Pat<(add LowReg:$r, NEGu5:$imm), (SUBqi LowReg:$r, NEGu5:$imm)>;

@@ -1,4 +1,4 @@
-//===-- VideocoreTargetMachine.h - Define TargetMachine for Videocore ---*- C++ -*-===//
+//=== VideocoreTargetMachine.h - Define Videocore TargetMachine -*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -38,7 +38,7 @@ public:
                      Reloc::Model RM, CodeModel::Model CM,
                      CodeGenOpt::Level OL);
 
-  virtual const VideocoreInstrInfo *getInstrInfo() const { 
+  virtual const VideocoreInstrInfo *getInstrInfo() const {
 	return &InstrInfo;
  }
   virtual const TargetFrameLowering  *getFrameLowering() const {
@@ -53,11 +53,11 @@ public:
   virtual const VideocoreSelectionDAGInfo* getSelectionDAGInfo() const {
     return &TSInfo;
   }
-  virtual const VideocoreSubtarget *getSubtargetImpl() const { 
-    return &Subtarget; 
+  virtual const VideocoreSubtarget *getSubtargetImpl() const {
+    return &Subtarget;
   }
-  virtual const DataLayout *getDataLayout() const { 
-    return &DL; 
+  virtual const DataLayout *getDataLayout() const {
+    return &DL;
   }
 
   // Pass Pipeline Configuration

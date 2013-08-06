@@ -1,4 +1,4 @@
-//===-- SparcRegisterInfo.cpp - SPARC Register Information ----------------===//
+//===-- VideocoreRegisterInfo.cpp - Videocore Register Information --------===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,7 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file contains the SPARC implementation of the TargetRegisterInfo class.
+// This file contains the Videocore implementation of the TargetRegisterInfo
+// class.
 //
 //===----------------------------------------------------------------------===//
 
@@ -30,12 +31,13 @@ VideocoreRegisterInfo::VideocoreRegisterInfo(const TargetInstrInfo &tii)
   : VideocoreGenRegisterInfo(VC::LR, 0, 0), TII(tii) {
 }
 
-const uint16_t* VideocoreRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF)
-                                                                         const {
+const uint16_t*
+VideocoreRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
   return CSR_VC4_SaveList;
 }
 
-BitVector VideocoreRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
+BitVector
+VideocoreRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
   Reserved.set(VC::SP); // Stack pointer
   Reserved.set(VC::LR); // link return
@@ -44,7 +46,8 @@ BitVector VideocoreRegisterInfo::getReservedRegs(const MachineFunction &MF) cons
   return Reserved;
 }
 
-unsigned VideocoreRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
+unsigned
+VideocoreRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   return VC::R23;
 }
 

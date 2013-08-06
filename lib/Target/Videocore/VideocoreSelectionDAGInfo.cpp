@@ -15,7 +15,8 @@
 #include "VideocoreTargetMachine.h"
 using namespace llvm;
 
-VideocoreSelectionDAGInfo::VideocoreSelectionDAGInfo(const VideocoreTargetMachine &TM)
+VideocoreSelectionDAGInfo::
+VideocoreSelectionDAGInfo(const VideocoreTargetMachine &TM)
   : TargetSelectionDAGInfo(TM) {
 }
 

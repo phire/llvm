@@ -1,4 +1,4 @@
-//=== VideocoreInstrFormats.td - Videocore Instruction Formats ---*- tablegen -*-===//
+//=== VideocoreInstrFormats.td - Instruction Formats -------*- tablegen -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,7 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-class InstVC<int sz, dag outs, dag ins, string asmstr, list<dag> pattern> : Instruction {
+class InstVC<int sz, dag outs, dag ins, string asmstr, list<dag> pattern>
+ : Instruction {
   field bits<48> Inst;
 
   let Namespace = "VC";
@@ -21,13 +22,13 @@ class InstVC<int sz, dag outs, dag ins, string asmstr, list<dag> pattern> : Inst
   field bits<48> SoftFail = 0;
 }
 
-class InstVC16<dag outs, dag ins, string asmstr, list<dag> pattern> 
+class InstVC16<dag outs, dag ins, string asmstr, list<dag> pattern>
   : InstVC<2, outs, ins, asmstr, pattern>;
 
-class InstVC32<dag outs, dag ins, string asmstr, list<dag> pattern> 
+class InstVC32<dag outs, dag ins, string asmstr, list<dag> pattern>
   : InstVC<4, outs, ins, asmstr, pattern>;
 
-class InstVC48<dag outs, dag ins, string asmstr, list<dag> pattern> 
+class InstVC48<dag outs, dag ins, string asmstr, list<dag> pattern>
   : InstVC<6, outs, ins, asmstr, pattern>;
 
 
@@ -90,7 +91,7 @@ class R_R<bits<12> op, string mnemonic, list<dag> pattern>
 }
 
 class R_I<bits<12> op, string mnemonic, list<dag> pattern>
-   : _R__<op, (ins immS6opnd:$imm, cond_code:$Cond), 
+   : _R__<op, (ins immS6opnd:$imm, cond_code:$Cond),
                !strconcat(mnemonic, "$Cond $Rd, $imm"), pattern> {
   bits<6> imm;
 
@@ -100,7 +101,7 @@ class R_I<bits<12> op, string mnemonic, list<dag> pattern>
 }
 
 class MEMupdate<bits<12> op, string mnemonic, list<dag> pattern, Operand type>
-  : _R__<op, (ins type:$mem, cond_code:$Cond), 
+  : _R__<op, (ins type:$mem, cond_code:$Cond),
          !strconcat(mnemonic, "$Cond $Rd, $mem"), pattern> {
   bits<5> mem;
 
@@ -174,7 +175,7 @@ class _ArithLogicQQ<bits<5> op, dag ins, string asm, list<dag> pattern>
 }
 // Two inputs
 class ArithLogicQQ<bits<5> op, string asm, list<dag> pattern>
-   : _ArithLogicQQ<op, (ins LowReg:$src, LowReg:$Rs), 
+   : _ArithLogicQQ<op, (ins LowReg:$src, LowReg:$Rs),
                    !strconcat(asm, " $Rd, $Rs"), pattern> {
   let Constraints="$src = $Rd";
   let DisableEncoding="$src";
@@ -182,7 +183,7 @@ class ArithLogicQQ<bits<5> op, string asm, list<dag> pattern>
 }
 // Only one input
 class ArithLogicQQ_1<bits<5> op, string asm, list<dag> pattern>
-   : _ArithLogicQQ<op, (ins LowReg:$Rs), 
+   : _ArithLogicQQ<op, (ins LowReg:$Rs),
                    !strconcat(asm, " $Rd, $Rs"), pattern>;
 
 class _ArithLogicQI<bits<5> op, dag ins, string asm, list<dag> pattern>
@@ -196,7 +197,7 @@ class _ArithLogicQI<bits<5> op, dag ins, string asm, list<dag> pattern>
   let Inst{3-0} = Rd;
 }
 class ArithLogicQI<bits<5> op, string asm, list<dag> pattern>
-   : _ArithLogicQI<op, (ins LowReg:$src, immU5opnd:$imm), 
+   : _ArithLogicQI<op, (ins LowReg:$src, immU5opnd:$imm),
                    !strconcat(asm, " $Rd, $imm"), pattern> {
   let Constraints="$src = $Rd";
   let DisableEncoding="$src";
@@ -218,7 +219,7 @@ class _ArithLogicRI<bits<5> op, dag ins, string asm, list<dag> pattern>
   let Inst{15-0} = imm;
 }
 class ArithLogicRI<bits<5> op, string asm, list<dag> pattern>
-   : _ArithLogicRI<op, (ins IntReg:$src, immS16opnd:$imm), 
+   : _ArithLogicRI<op, (ins IntReg:$src, immS16opnd:$imm),
                    !strconcat(asm, " $Rd, $imm"), pattern> {
   let Constraints="$src = $Rd";
   let DisableEncoding="$src";
@@ -241,7 +242,7 @@ class _ArithLogicI32<bits<5> op, dag ins, string asm, list<dag> pattern>
   let Inst{31-0} = imm;
 }
 class ArithLogicI32<bits<5> op, string asm, list<dag> pattern>
-   : _ArithLogicI32<op, (ins IntReg:$src, immU32opnd:$imm), 
+   : _ArithLogicI32<op, (ins IntReg:$src, immU32opnd:$imm),
                    !strconcat(asm, " $Rd, $imm"), pattern> {
   let Constraints="$src = $Rd";
   let DisableEncoding="$src";

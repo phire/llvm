@@ -52,7 +52,7 @@ public:
 };
 } // namespace
 
-TargetPassConfig *VideocoreTargetMachine::createPassConfig(PassManagerBase &PM) {
+TargetPassConfig *VideocoreTargetMachine::createPassConfig(PassManagerBase &PM){
   return new VideocorePassConfig(this, PM);
 }
 

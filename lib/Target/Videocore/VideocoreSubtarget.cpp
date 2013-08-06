@@ -23,8 +23,10 @@ using namespace llvm;
 
 void VideocoreSubtarget::anchor() { }
 
-VideocoreSubtarget::VideocoreSubtarget(const std::string &TT, const std::string &CPU,
-                             const std::string &FS, bool little) :
+VideocoreSubtarget::VideocoreSubtarget(const std::string &TT,
+                                       const std::string &CPU,
+                                       const std::string &FS,
+                                       bool little) :
   VideocoreGenSubtargetInfo(TT, CPU, FS),
   VideocoreABI(UnknownABI), IsLittle(little)
 {

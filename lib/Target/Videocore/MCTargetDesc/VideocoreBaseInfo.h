@@ -1,4 +1,4 @@
-//===-- VideocoreBaseInfo.h - Top level definitions for VIDEOCORE MC ------*- C++ -*-===//
+//===-- VideocoreBaseInfo.h - definitions for Videocore MC ------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -27,7 +27,7 @@ namespace VCCC {
   // The CondCodes constants map directly to the 4-bit encoding of the
   // condition field for predicated instructions.
   // Almost the same as ARM condition codes, but LO and HS are swapped.
-  // FIXME: floating point meaning untested on arm.
+  // FIXME: floating point meaning untested on videocore
   enum CondCodes { // Meaning (integer)          Meaning (floating-point)
     EQ,            // Equal                      Equal
     NE,            // Not equal                  Not equal, or unordered
