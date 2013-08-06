@@ -1,4 +1,4 @@
-//===- VideocoreDisassembler.cpp - Disassembler for Videocore ---*- C++ -*-===//
+//===-- VideocoreDisassembler.cpp - Disassembler for Videocore ------------===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -37,8 +37,8 @@ class VideocoreDisassembler : public MCDisassembler {
 public:
   /// Constructor     - Initializes the disassembler.
   ///
-  VideocoreDisassembler(const MCSubtargetInfo &STI, const MCRegisterInfo *Info) : 
-    MCDisassembler(STI), RegInfo(Info) {}
+  VideocoreDisassembler(const MCSubtargetInfo &STI, const MCRegisterInfo *Info)
+    : MCDisassembler(STI), RegInfo(Info) {}
 
   virtual ~VideocoreDisassembler() {}
 
@@ -61,13 +61,14 @@ private:
 // Functions used by TableGen Disassembler
 
 static DecodeStatus DecodeLowRegRegisterClass(MCInst &Inst,
-                                                 unsigned RegNo,
-                                                 uint64_t Address,
-                                                 const void *Decoder) {
+                                              unsigned RegNo,
+                                              uint64_t Address,
+                                              const void *Decoder) {
   if (RegNo > 16)
     return MCDisassembler::Fail;
 
-  const VideocoreDisassembler *Dis = static_cast<const VideocoreDisassembler*>(Decoder);
+  const VideocoreDisassembler *Dis =
+                     static_cast<const VideocoreDisassembler*>(Decoder);
 
   unsigned Reg = Dis->getReg(VC::LowRegRegClassID, RegNo);
   Inst.addOperand(MCOperand::CreateReg(Reg));
@@ -81,7 +82,8 @@ static DecodeStatus DecodeIntRegRegisterClass(MCInst &Inst,
   if (RegNo > 30)
     return MCDisassembler::Fail;
 
-  const VideocoreDisassembler *Dis = static_cast<const VideocoreDisassembler*>(Decoder);
+  const VideocoreDisassembler *Dis =
+                   static_cast<const VideocoreDisassembler*>(Decoder);
 
   unsigned Reg = Dis->getReg(VC::IntRegRegClassID, RegNo);
   Inst.addOperand(MCOperand::CreateReg(Reg));
@@ -95,7 +97,8 @@ static DecodeStatus DecodeAllRegRegisterClass(MCInst &Inst,
   if (RegNo > 31)
     return MCDisassembler::Fail;
 
-  const VideocoreDisassembler *Dis = static_cast<const VideocoreDisassembler*>(Decoder);
+  const VideocoreDisassembler *Dis =
+                     static_cast<const VideocoreDisassembler*>(Decoder);
 
   unsigned Reg = Dis->getReg(VC::AllRegRegClassID, RegNo);
   Inst.addOperand(MCOperand::CreateReg(Reg));
@@ -103,16 +106,16 @@ static DecodeStatus DecodeAllRegRegisterClass(MCInst &Inst,
 }
 
 // xxxx xxxo xxxd dddd ssss sooo oooo oooo
-static DecodeStatus DecodeMem_5_12(MCInst &MI, 
+static DecodeStatus DecodeMem_5_12(MCInst &MI,
                                    unsigned insn,
                                    uint64_t Address,
                                    const void *Decoder) {
   unsigned rd = (insn >> 16) & 0x1f;
-  if (DecodeIntRegRegisterClass(MI, rd, Address, Decoder) == MCDisassembler::Fail) 
+  if (DecodeIntRegRegisterClass(MI, rd, Address, Decoder) == MCDisassembler::Fail)
     return MCDisassembler::Fail;
 
   unsigned rs = (insn >> 11) & 0x1f;
-  if (DecodeIntRegRegisterClass(MI, rs, Address, Decoder) == MCDisassembler::Fail) 
+  if (DecodeIntRegRegisterClass(MI, rs, Address, Decoder) == MCDisassembler::Fail)
     return MCDisassembler::Fail;
 
   signed int offset = (insn & 0x7ff);
@@ -125,7 +128,7 @@ static DecodeStatus DecodeMem_5_12(MCInst &MI,
 
 #include "VideocoreGenDisassemblerTables.inc"
 
-  /// readInstruction - read the correct number of bytes from the 
+  /// readInstruction - read the correct number of bytes from the
   /// MemoryObject and the full instruction in the correct bit order
 static DecodeStatus readInstruction(const MemoryObject &region,
                                       uint64_t address,
@@ -145,7 +148,7 @@ static DecodeStatus readInstruction(const MemoryObject &region,
     size = 2;
     return MCDisassembler::Success;
   }
-  if ((word & 0xf000) < 0xe000) { // 1xxx xxxx xxxx xxxx - 32 bits (excluding below)
+  if ((word & 0xf000) < 0xe000) { // 1YYx xxxx xxxx xxxx (Where YY != 11)
     if (region.readBytes(address+2, 2, (uint8_t*)bytes, NULL) != -1) {
       insn = (uint32_t)(word << 16 | bytes[1] << 8 | bytes[0]);
       size = 4;
@@ -154,13 +157,16 @@ static DecodeStatus readInstruction(const MemoryObject &region,
   }
   if ((word & 0xf000) == 0xe000) { // 1110 xxxx xxxx xxxx - 48 bits
     if (region.readBytes(address+2, 4, (uint8_t*)bytes, NULL) != -1) {
-      insn = ((uint64_t)bytes[3]) << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0];
+      insn = ((uint64_t)bytes[3]) << 24 |
+              bytes[2] << 16 |
+              bytes[1] << 8 |
+              bytes[0];
       insn |= ((uint64_t)word) << 32;
       size = 6;
       return MCDisassembler::Success;
     }
   }
-  if ((word & 0xf000) == 0xf000) { // 1111 xxxx xxxx xxxx - vector 48/80 bits
+  if ((word & 0xf000) == 0xf000) { // 1111 Yxxx xxxx xxxx - vector 48/80 bits
     // Vector instruction
     size = (word & 0x0800) ? 10 : 6;
     return MCDisassembler::Fail; // Unimplemented
@@ -177,7 +183,7 @@ VideocoreDisassembler::getInstruction(MCInst &instr,
                                  raw_ostream &vStream,
                                  raw_ostream &cStream) const {
   uint64_t Insn = 0;
- 
+
   DecodeStatus Result = readInstruction(Region, Address, Size, Insn);
 
   if (Result == MCDisassembler::Fail) {
@@ -189,14 +195,14 @@ VideocoreDisassembler::getInstruction(MCInst &instr,
   }
 
   // Calling the auto-generated decoder function.
-  const uint8_t *DecodeTable;
+  const uint8_t *Table;
   switch(Size) {
-    case 2: DecodeTable = llvm::DecoderTable16; break;
-    case 4: DecodeTable = llvm::DecoderTable32; break;
-    case 6: DecodeTable = llvm::DecoderTable48; break;
+    case 2: Table = llvm::DecoderTable16; break;
+    case 4: Table = llvm::DecoderTable32; break;
+    case 6: Table = llvm::DecoderTable48; break;
   }
 
-  Result = llvm::decodeInstruction(DecodeTable, instr, Insn, Address, this, STI);
+  Result = llvm::decodeInstruction(Table, instr, Insn, Address, this, STI);
 
   if (Result != MCDisassembler::Fail) {
     return Result;
@@ -220,9 +226,9 @@ static MCDisassembler *createVideocoreDisassembler(const Target &T,
   return new VideocoreDisassembler(STI, T.createMCRegInfo(""));
 }
 
-extern "C" void LLVMInitializeVideocoreDisassembler() { 
+extern "C" void LLVMInitializeVideocoreDisassembler() {
   // Register the disassembler.
-  TargetRegistry::RegisterMCDisassembler(TheVideocoreTarget, 
+  TargetRegistry::RegisterMCDisassembler(TheVideocoreTarget,
                                          createVideocoreDisassembler);
 }
 } // namespace llvm

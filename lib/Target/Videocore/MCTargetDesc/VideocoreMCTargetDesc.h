@@ -37,7 +37,8 @@ MCObjectWriter *createVideocoreELFObjectWriter(raw_ostream &OS,
                                             uint8_t OSABI,
                                             bool IsLittleEndian);
 
-MCAsmBackend *createVideocoreAsmBackend(const Target &T, StringRef TT, StringRef CPU);
+MCAsmBackend *createVideocoreAsmBackend(const Target &T, StringRef TT,
+                                        StringRef CPU);
 
 extern Target TheVideocoreTarget;
 

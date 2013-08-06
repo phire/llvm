@@ -1,4 +1,4 @@
-##===- lib/Target/SystemZ/AsmParser/Makefile ---------------*- Makefile -*-===##
+##===- lib/Target/Videocore/AsmParser/Makefile -------------*- Makefile -*-===##
 #
 #                     The LLVM Compiler Infrastructure
 #
@@ -10,7 +10,8 @@
 LEVEL = ../../../..
 LIBRARYNAME = LLVMVideocoreAsmParser
 
-# Hack: we need to include 'main' SystemZ target directory to grab private headers
+# Hack: we need to include the 'main' Videocore target directory to grab
+# private headers
 CPP.Flags += -I$(PROJ_OBJ_DIR)/.. -I$(PROJ_SRC_DIR)/..
 
 include $(LEVEL)/Makefile.common

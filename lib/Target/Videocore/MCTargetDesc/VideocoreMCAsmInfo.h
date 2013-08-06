@@ -11,8 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef XCORETARGETASMINFO_H
-#define XCORETARGETASMINFO_H
+#ifndef VIDEOCORETARGETASMINFO_H
+#define VIDEOCORETARGETASMINFO_H
 
 #include "llvm/MC/MCAsmInfo.h"
 

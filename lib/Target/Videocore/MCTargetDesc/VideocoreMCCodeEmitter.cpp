@@ -1,4 +1,4 @@
-//===-- VideocoreMCCodeEmitter.cpp - Convert Videocore Code to Machine Code ---------===//
+//=== VideocoreMCCodeEmitter.cpp -- Convert Videocore Code to Machine Code ===//
 //
 //                     The LLVM Compiler Infrastructure
 //

@@ -1,4 +1,4 @@
-//===-- VideocoreFrameLowering.h - Define frame lowering for Videocore --*- C++ -*-===//
+//=== VideocoreFrameLowering.h - Define Videocore frame lowering *- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //

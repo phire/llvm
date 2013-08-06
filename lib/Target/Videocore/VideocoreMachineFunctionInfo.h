@@ -1,4 +1,4 @@
-//===- VideocoreMachineFunctionInfo.h - Videocore Machine Function Info -*- C++ -*-===//
+//===------ VideocoreMachineFunctionInfo.h ----------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file declares  Videocore specific per-machine-function information.
+// This file declares Videocore specific per-machine-function information.
 //
 //===----------------------------------------------------------------------===//
 #ifndef VIDEOCOREMACHINEFUNCTIONINFO_H

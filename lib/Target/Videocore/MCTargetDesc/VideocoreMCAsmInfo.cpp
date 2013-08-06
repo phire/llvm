@@ -1,4 +1,4 @@
-//===-- VideocoreMCAsmInfo.cpp - Videocore asm properties -------------------------===//
+//===-- VideocoreMCAsmInfo.cpp - Videocore asm properties -----------------===//
 //
 //                     The LLVM Compiler Infrastructure
 //

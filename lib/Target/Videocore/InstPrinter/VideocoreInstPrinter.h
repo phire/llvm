@@ -1,4 +1,4 @@
-//==---- VideocoreInstPrinter.h - Convert X86 MCInst to assembly syntax -----=//
+//==-- VideocoreInstPrinter.h - Convert MCInst to assembly syntax -*- C++ -*-=//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This class prints an Videocore MCInst to AT&T style .s file syntax.
+// This class prints an Videocore MCInst to .s file syntax.
 //
 //===----------------------------------------------------------------------===//
 

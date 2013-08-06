@@ -53,12 +53,12 @@ static bool isZeroImm(const MachineOperand &op) {
 /// the destination along with the FrameIndex of the loaded stack slot.  If
 /// not, return 0.  This predicate must return 0 if the instruction has
 /// any side effects other than loading from the stack slot.
-unsigned
-VideocoreInstrInfo::isLoadFromStackSlot(const MachineInstr *MI, int &FrameIndex) const{
+unsigned VideocoreInstrInfo::
+isLoadFromStackSlot(const MachineInstr *MI, int &FrameIndex) const{
   int Opcode = MI->getOpcode();
   return 0;
 }
-  
+
   /// isStoreToStackSlot - If the specified machine instruction is a direct
   /// store to a stack slot, return the virtual or physical register number of
   /// the source reg along with the FrameIndex of the loaded stack slot.  If
@@ -95,11 +95,11 @@ VideocoreInstrInfo::isStoreToStackSlot(const MachineInstr *MI,
 /// Note that RemoveBranch and InsertBranch must be implemented to support
 /// cases where this method returns success.
 ///
-bool
-VideocoreInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB, MachineBasicBlock *&TBB,
-                              MachineBasicBlock *&FBB,
-                              SmallVectorImpl<MachineOperand> &Cond,
-                              bool AllowModify) const {
+bool VideocoreInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB,
+                                  MachineBasicBlock *&TBB,
+                                  MachineBasicBlock *&FBB,
+                                  SmallVectorImpl<MachineOperand> &Cond,
+                                  bool AllowModify) const {
   // If the block has no terminators, it just falls into the block after it.
   MachineBasicBlock::iterator I = MBB.end();
   if (I == MBB.begin())
@@ -115,18 +115,18 @@ VideocoreInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB, MachineBasicBlock *&TB
 
   // Get the last instruction in the block.
   MachineInstr *LastInst = I;
-  
+
   // If there is only one terminator instruction, process it.
   if (I == MBB.begin() || !isUnpredicatedTerminator(--I)) {
     if (IsBRU(LastInst->getOpcode())) {
       TBB = LastInst->getOperand(0).getMBB();
       return false;
     }
-    
+
     Videocore::CondCode BranchCode = GetCondFromBranchOpc(LastInst->getOpcode());
     if (BranchCode == Videocore::COND_INVALID)
       return true;  // Can't handle indirect branch.
-    
+
     // Conditional branch
     // Block ends with fall-through condbranch.
 
@@ -135,7 +135,7 @@ VideocoreInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB, MachineBasicBlock *&TB
     Cond.push_back(LastInst->getOperand(0));
     return false;
   }
-  
+
   // Get the instruction before it if it's a terminator.
   MachineInstr *SecondLastInst = I;
 
@@ -143,10 +143,10 @@ VideocoreInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB, MachineBasicBlock *&TB
   if (SecondLastInst && I != MBB.begin() &&
       isUnpredicatedTerminator(--I))
     return true;
-  
+
   unsigned SecondLastOpc    = SecondLastInst->getOpcode();
   Videocore::CondCode BranchCode = GetCondFromBranchOpc(SecondLastOpc);
-  
+
   // If the block ends with conditional branch followed by unconditional,
   // handle it.
   if (BranchCode != Videocore::COND_INVALID
@@ -159,10 +159,10 @@ VideocoreInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB, MachineBasicBlock *&TB
     FBB = LastInst->getOperand(0).getMBB();
     return false;
   }
-  
+
   // If the block ends with two unconditional branches, handle it.  The second
   // one is not executed, so remove it.
-  if (IsBRU(SecondLastInst->getOpcode()) && 
+  if (IsBRU(SecondLastInst->getOpcode()) &&
       IsBRU(LastInst->getOpcode())) {
     TBB = SecondLastInst->getOperand(0).getMBB();
     I = LastInst;
@@ -171,7 +171,7 @@ VideocoreInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB, MachineBasicBlock *&TB
     return false;
   }
 
-  // Likewise if it ends with a branch table followed by an unconditional branch.
+  // Likewise if it ends with a branch table followed by an unconditional branch
   if (IsBR_JT(SecondLastInst->getOpcode()) && IsBRU(LastInst->getOpcode())) {
     I = LastInst;
     if (AllowModify)
@@ -192,7 +192,7 @@ VideocoreInstrInfo::InsertBranch(MachineBasicBlock &MBB,MachineBasicBlock *TBB,
   assert(TBB && "InsertBranch must not be told to insert a fallthrough");
   assert((Cond.size() == 2 || Cond.size() == 0) &&
          "Unexpected number of components!");
-  
+
   if (FBB == 0) { // One way branch.
     if (Cond.empty()) {
       // Unconditional branch
@@ -205,7 +205,7 @@ VideocoreInstrInfo::InsertBranch(MachineBasicBlock &MBB,MachineBasicBlock *TBB,
     }
     return 1;
   }
-  
+
   // Two-way Conditional branch.
   assert(Cond.size() == 2 && "Unexpected number of components!");
   unsigned Opc = GetCondBranchFromCond((Videocore::CondCode)Cond[0].getImm());
@@ -227,17 +227,17 @@ VideocoreInstrInfo::RemoveBranch(MachineBasicBlock &MBB) const {
   }
   if (!IsBRU(I->getOpcode()) && !IsCondBranch(I->getOpcode()))
     return 0;
-  
+
   // Remove the branch.
   I->eraseFromParent();
-  
+
   I = MBB.end();
 
   if (I == MBB.begin()) return 1;
   --I;
   if (!IsCondBranch(I->getOpcode()))
     return 1;
-  
+
   // Remove the branch.
   I->eraseFromParent();
   return 2;
@@ -249,13 +249,13 @@ void VideocoreInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                  bool KillSrc) const {
   int opc;
   if (VC::LowRegRegClass.contains(SrcReg) &&
-		VC::LowRegRegClass.contains(DestReg)) 
+		VC::LowRegRegClass.contains(DestReg))
 	opc = VC::MOVqq;
   else
 	opc = VC::MOVrr;
 
   BuildMI(MBB, I, DL, get(opc)).addReg(DestReg).addReg(SrcReg);
-} 
+}
 
 /*
 void VideocoreInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
@@ -279,11 +279,11 @@ void VideocoreInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
   if (I != MBB.end()) DL = I->getDebugLoc();
 }
 
-/// ReverseBranchCondition - Return the inverse opcode of the 
+/// ReverseBranchCondition - Return the inverse opcode of the
 /// specified Branch instruction.
 bool VideocoreInstrInfo::
 ReverseBranchCondition(SmallVectorImpl<MachineOperand> &Cond) const {
-  assert((Cond.size() == 2) && 
+  assert((Cond.size() == 2) &&
           "Invalid Videocore branch condition!");
   Cond[0].setImm(GetOppositeBranchCondition((Videocore::CondCode)Cond[0].getImm()));
   return false;

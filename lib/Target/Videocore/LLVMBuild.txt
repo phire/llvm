@@ -1,4 +1,4 @@
-;===- ./lib/Target/Sparc/LLVMBuild.txt -------------------------*- Conf -*--===;
+;===- ./lib/Target/Videocore/LLVMBuild.txt ---------------------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;

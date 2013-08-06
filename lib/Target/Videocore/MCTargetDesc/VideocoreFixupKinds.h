@@ -1,4 +1,4 @@
-//===-- VideocoreFixupKinds.h - Videocore Specific Fixup Entries ----------*- C++ -*-===//
+//=== VideocoreFixupKinds.h -- Videocore Specific Fixup Entries -*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //

@@ -1,4 +1,4 @@
-//===-- Videoore.td - Describe the Videoore Target Machine -*- tablegen -*-===//
+//===-- Videocore.td - Describe Videoore Target Machine 000-*- tablegen -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //

@@ -1,4 +1,4 @@
-//===-- VideocoreRegisterInfo.h - Videocore Register Information Impl ---*- C++ -*-===//
+//=== VideocoreRegisterInfo.h - Videocore Register Information --*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,7 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file contains the Videocore implementation of the TargetRegisterInfo class.
+// This file contains the Videocore implementation of the TargetRegisterInfo
+// class.
 //
 //===----------------------------------------------------------------------===//
 
@@ -35,7 +36,7 @@ struct VideocoreRegisterInfo : public VideocoreGenRegisterInfo {
   BitVector getReservedRegs(const MachineFunction &MF) const;
 
   void eliminateFrameIndex(MachineBasicBlock::iterator II,
-                           int SPAdj, unsigned FIOperandNum, 
+                           int SPAdj, unsigned FIOperandNum,
                              RegScavenger *RS = NULL) const;
 
   // Debug information queries.

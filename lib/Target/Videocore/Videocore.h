@@ -1,4 +1,4 @@
-//===--- Videocore.h - Top-level interface for Videocore representation ---===//
+//===---- Videocore.h - Top-level interface for Videocore ----*- C++ -*----===//
 //
 //                     The LLVM Compiler Infrastructure
 //

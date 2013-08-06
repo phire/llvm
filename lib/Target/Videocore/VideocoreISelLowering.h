@@ -1,4 +1,4 @@
-//===-- VideocoreISelLowering.h - Videocore DAG Lowering Interface --------===//
+//=== VideocoreISelLowering.h - Videocore DAG Lowering Interface -*- C++ -*-==//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file defines the interfaces that Videocore uses to lower LLVM code into a
-// selection DAG.
+// This file defines the interfaces that Videocore uses to lower LLVM code into
+// a selection DAG.
 //
 //===----------------------------------------------------------------------===//
 

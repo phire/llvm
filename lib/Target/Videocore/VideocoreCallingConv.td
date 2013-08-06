@@ -1,4 +1,4 @@
-//===-- VideocoreCallingConv.td - Calling Conventions Videocore ----*- tablegen -*-===//
+//===-- VideocoreCallingConv.td - Calling Conventions ------*- tablegen -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -37,4 +37,4 @@ def CC_VC4 : CallingConv<[
   CCAssignToStack<4, 4>
 ]>;
 
-def CSR_VC4 : CalleeSavedRegs<(add (sequence "R%u", 6, 24), SP, LR, R27, R28, R29)>;
+def CSR_VC4 : CalleeSavedRegs<(add (sequence "R%u", 6, 24), SP, LR)>;

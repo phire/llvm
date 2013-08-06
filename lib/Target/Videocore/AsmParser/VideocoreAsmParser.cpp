@@ -1,4 +1,4 @@
-//===-- VideocoreAsmParser.cpp - Parse Videocore assembly instructions --------===//
+//===-- VideocoreAsmParser.cpp - Parse Videocore assembly instructions ----===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -98,7 +98,6 @@ private:
   }
 
 public:
-  
   // Create particular kinds of operand.
   static VideocoreOperand *createToken(StringRef Str, SMLoc Loc) {
     VideocoreOperand *Op = new VideocoreOperand(KindToken, Loc, Loc);
@@ -113,7 +112,7 @@ public:
     Op->Reg.Num = Num;
     return Op;
   }
-  static VideocoreOperand *createMem(unsigned Base, unsigned Index, 
+  static VideocoreOperand *createMem(unsigned Base, unsigned Index,
                                      const MCExpr *Disp, unsigned Update,
                                    SMLoc StartLoc, SMLoc EndLoc) {
     VideocoreOperand *Op = new VideocoreOperand(KindMem, StartLoc, EndLoc);
@@ -136,7 +135,7 @@ public:
     Op->CondCode = code;
     return Op;
   }
-  
+
   // Token operands
   virtual bool isToken() const LLVM_OVERRIDE {
     return Kind == KindToken;
@@ -166,7 +165,7 @@ public:
   }
   bool isImmU5() const {
     return isImm(0, 31);
-  } 
+  }
   bool isImmS6() const {
     return isImm(-32, 31);
   }
@@ -190,11 +189,11 @@ public:
     return Kind == KindMem;
   }
   bool isMemInc() const {
-    return isMem() && !Mem.Index && !Mem.Disp && 
+    return isMem() && !Mem.Index && !Mem.Disp &&
            Mem.Update == PostIncrement;
   }
   bool isMemDec() const {
-    return isMem() && !Mem.Index && !Mem.Disp && 
+    return isMem() && !Mem.Index && !Mem.Disp &&
            Mem.Update == PreDecrement;
   }
   bool isMemOffset() const {
@@ -268,7 +267,8 @@ private:
 
   bool parseOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands,
                     StringRef Mnemonic);
-  StringRef splitMnemonic(StringRef Mnemonic, unsigned &CondCode, StringRef &Postfix);
+  StringRef splitMnemonic(StringRef Mnemonic, unsigned &CondCode,
+                          StringRef &Postfix);
   bool InstructionIsConditional(StringRef Mnemonic, int numOperands,
                              SmallVectorImpl<MCParsedAsmOperand*> &Operands);
 
@@ -382,12 +382,12 @@ tryParseRegisterWithWriteBack(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
 //
 // FIXME: Would be nice to autogen this.
 // FIXME: This is a bit of a maze of special cases.
-StringRef VideocoreAsmParser::splitMnemonic(StringRef Mnemonic, 
+StringRef VideocoreAsmParser::splitMnemonic(StringRef Mnemonic,
                                      unsigned &CondCode, StringRef &Postfix) {
   // Instruction postfix, ie: div.ss
   Postfix = Mnemonic.split('.').second;
   Mnemonic = Mnemonic.split('.').first;
-  
+
   CondCode = VCCC::AL;
   // Ignore some mnemonics we know aren't predicated forms.
   //
@@ -430,7 +430,7 @@ StringRef VideocoreAsmParser::splitMnemonic(StringRef Mnemonic,
 // FIXME: This is a bit of a maze of special cases.
 // FIXME: Doesn't cover load/stores
 bool VideocoreAsmParser::
-InstructionIsConditional(StringRef Mnemonic, int numOperands, 
+InstructionIsConditional(StringRef Mnemonic, int numOperands,
                          SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
   switch(numOperands) {
   case 1:
@@ -449,8 +449,8 @@ InstructionIsConditional(StringRef Mnemonic, int numOperands,
       // How on earth am I going to do this???
       // False
          // 16 bit instructions:
-         // <w>=W, Low Reg Dest, Base is SP, Disp is S6 * 4 
-         //        Low Regs, no Offset 
+         // <w>=W, Low Reg Dest, Base is SP, Disp is S6 * 4
+         //        Low Regs, no Offset
          // <w>=W, Low Regs, Disp is U4 * 4
          //
          // Base is PC
@@ -517,14 +517,13 @@ InstructionIsConditional(StringRef Mnemonic, int numOperands,
 
 bool VideocoreAsmParser::
 ParseInstruction(ParseInstructionInfo &Info, StringRef Name, SMLoc NameLoc,
-                 SmallVectorImpl<MCParsedAsmOperand*> &Operands) { 
+                 SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
   unsigned CondCode;
   StringRef Postfix;
 
   StringRef Mnemonic = splitMnemonic(Name, CondCode, Postfix);
   Operands.push_back(VideocoreOperand::createToken(Mnemonic, NameLoc));
 
-  
   if(Postfix != "") {
     Postfix = "." + Postfix.str();
     Operands.push_back(VideocoreOperand::createToken(Postfix, NameLoc));
@@ -560,12 +559,12 @@ ParseInstruction(ParseInstructionInfo &Info, StringRef Name, SMLoc NameLoc,
    }
 
   if(InstructionIsConditional(Mnemonic, numOperands, Operands)) {
-    // The condition code needs to be the second operand, But we don't 
+    // The condition code needs to be the second operand, But we don't
     // know if we need it until we know how many operands we have.
     SMLoc S = SMLoc::getFromPointer(NameLoc.getPointer() + Mnemonic.size());
     SMLoc E = SMLoc::getFromPointer(NameLoc.getPointer() + Name.size());
 
-    Operands.insert(Operands.begin()+1, 
+    Operands.insert(Operands.begin()+1,
                     VideocoreOperand::createCondCode(CondCode, S, E));
   } else if(CondCode != VCCC::AL) {
     SMLoc Loc = SMLoc::getFromPointer(NameLoc.getPointer() + Mnemonic.size());
@@ -583,8 +582,8 @@ parseMem(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
   SMLoc Loc = Parser.getTok().getLoc();
   // Starts with "(" or "--("
   if (getLexer().is(AsmToken::LParen) || getLexer().is(AsmToken::MinusMinus)) {
-    int Update = getLexer().is(AsmToken::MinusMinus) ? 
-                 VideocoreOperand::PreDecrement : 
+    int Update = getLexer().is(AsmToken::MinusMinus) ?
+                 VideocoreOperand::PreDecrement :
                  VideocoreOperand::None;
     unsigned Base;
     unsigned Index = 0;
@@ -633,8 +632,8 @@ parseMem(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
       Parser.Lex();
       Update = VideocoreOperand::PostIncrement;
     }
-    Operands.push_back(VideocoreOperand::createMem(Base, Index, 
-                       Disp, Update, Loc, Parser.getTok().getLoc())); 
+    Operands.push_back(VideocoreOperand::createMem(Base, Index,
+                       Disp, Update, Loc, Parser.getTok().getLoc()));
     return MatchOperand_Success;
   }
   return MatchOperand_NoMatch;

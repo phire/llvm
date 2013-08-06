@@ -1,4 +1,4 @@
-//===-- VideocoreMCInstLower.h - Lower MachineInstr to MCInst -------*- C++ -*--===//
+//===-- VideocoreMCInstLower.h - Lower MachineInstr to MCInst---*- C++ -*--===//
 //
 //                     The LLVM Compiler Infrastructure
 //

@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements the interfaces that Videocore uses to lower LLVM code into a
-// selection DAG.
+// This file implements the interfaces that Videocore uses to lower LLVM code 
+// into a selection DAG.
 //
 //===----------------------------------------------------------------------===//
 
@@ -75,7 +75,7 @@ VideocoreTargetLowering::VideocoreTargetLowering(TargetMachine &TM)
 
   setOperationAction(ISD::SELECT, MVT::i32, Custom);
   setOperationAction(ISD::SELECT, MVT::f32, Custom);
-  
+
   setOperationAction(ISD::SELECT_CC, MVT::i32, Custom);
   setOperationAction(ISD::SELECT_CC, MVT::f32, Custom);
 

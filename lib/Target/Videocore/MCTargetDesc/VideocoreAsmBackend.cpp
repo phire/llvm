@@ -1,4 +1,4 @@
-//===-- VideocoreASMBackend.cpp - Videocore Asm Backend  ----------------------------===//
+//===-- VideocoreASMBackend.cpp - Videocore Asm Backend  ------------------===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,7 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements the VideocoreAsmBackend and VideocoreELFObjectWriter classes.
+// This file implements the VideocoreAsmBackend and VideocoreELFObjectWriter
+// classes.
 //
 //===----------------------------------------------------------------------===//
 //
@@ -201,7 +202,8 @@ public:
 } // namespace
 
 // MCAsmBackend
-MCAsmBackend *llvm::createVideocoreAsmBackend(const Target &T, StringRef TT, StringRef CPU) {
+MCAsmBackend *llvm::createVideocoreAsmBackend(const Target &T, StringRef TT,
+                                              StringRef CPU) {
   return new VideocoreAsmBackend(T, Triple(TT).getOS());
 }
 

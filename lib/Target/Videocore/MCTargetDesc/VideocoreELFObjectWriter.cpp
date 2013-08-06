@@ -1,4 +1,4 @@
-//===-- VideocoreELFObjectWriter.cpp - Videocore ELF Writer -------------------------===//
+//===-- VideocoreELFObjectWriter.cpp - Videocore ELF Writer ---------------===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -163,7 +163,7 @@ void VideocoreELFObjectWriter::sortRelocs(const MCAssembler &Asm,
   // Call the defualt function first. Relocations are sorted in descending
   // order of r_offset.
   MCELFObjectTargetWriter::sortRelocs(Asm, Relocs);
-  
+
   RelLs RelocLs;
   std::vector<RelLsIter> Unmatched;
 
