@@ -161,11 +161,15 @@ printVector(const MCInst *MI, int opNum, raw_ostream &O) {
   const MCOperand &MO = MI->getOperand(opNum);
 
   unsigned bits = MO.getImm();
-  assert(bits < 0x3bf && "Vector Operand too large");
+  //assert(bits < 0x3bf && "Vector Operand too large");
 
   unsigned type = (bits & 0x3c0) >> 6;
   if (type == 0xe) { // Nop vector operand
     O << "-";
+    return;
+  }
+  if (type == 0xf) {
+    O << "<invalid>";
     return;
   }
 
@@ -230,3 +234,23 @@ printSetF(const MCInst *MI, int opNum, raw_ostream &O) {
     O << " SETF";
   }
 }
+
+void VideocoreInstPrinter::
+printSext(const MCInst *MI, int opNum, raw_ostream &O) {
+  const MCOperand &MO = MI->getOperand(opNum);
+
+  if (MO.getImm()) {
+    // get the destination vector type
+    unsigned DestType = (MI->getOperand(0).getImm() & 0x380) >> 7;
+    if (DestType == 6) {
+      // destination is a 32 bit vector
+      O << "L";
+    } else if (DestType == 4 || DestType == 5) {
+      // destination is a 16 bit vector
+      O << "H";
+    } else {
+      O << "<invalid>";
+    }
+  }
+}
+

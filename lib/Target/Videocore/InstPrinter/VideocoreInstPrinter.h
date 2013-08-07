@@ -47,6 +47,7 @@ private:
   void printVector(const MCInst *MI, int opNum, raw_ostream &O);
   void printVectorPred(const MCInst *MI, int opNum, raw_ostream &O);
   void printSetF(const MCInst *MI, int opNum, raw_ostream &O);
+  void printSext(const MCInst *MI, int opNum, raw_ostream &O);
 };
 }
 

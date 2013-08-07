@@ -44,20 +44,117 @@ def SetF : Operand<i32> {
   let ParserMatchClass = SetFOperand;
 }
 
+def SextOperand : AsmOperandClass {
+  let Name = "Sext";
+  let ParserMethod = "parseSext";
+  let RenderMethod = "addSext";
+}
+
+def Sext : Operand<i32> {
+  let PrintMethod = "printSext";
+  let ParserMatchClass = SextOperand;
+}
 
 
-// Just a test for 80 bit vectors
-//   44   40   36   32   28   24   20   16   12    8    4    0
-// 1111 01Xp pppp psss dddd dddd ddaa aaaa aaaa z0bb bbbb bbbb
-class VectorData48<bits<6> opc, dag ins, string asmstr>
+class VectorMemory48<bits<7> opc, dag ins, string asmstr>
  : InstVC48<(outs Vector:$Rd), ins, asmstr, []> {
   bits<3>  Rs;
   bits<10> Rd;
   bits<10> Ra;
   bits<1>  z;
 
+  let Inst{47-42} = 0b111100;
+  let Inst{41-35} = opc;
+  let Inst{34-32} = Rs;
+  let Inst{31-22} = Rd;
+  let Inst{21-12} = Ra;
+  let Inst{11}    = z; // FIXME: isn't used
+}
+
+multiclass VectorMemory<bits<7> opc, string asm> {
+  // replicate scalar register Rb over all lanes
+  def 48sr : VectorMemory48<opc,
+        (ins Vector:$Ra, IntReg:$Rb, Scalar8:$Rs, SetF:$F),
+        !strconcat(asm, " $Rd, $Ra, (${Rb})$F")> {
+    bits<1>  F;
+    bits<6> Rb; // FIXME: you ahould only need 4/5 bits to encode Rb, this has 6
+
+    let Inst{10}    = 0;
+    let Inst{9-7}   = 0b111;
+    let Inst{6}     = F;
+    let Inst{5-4}   = 0; // zero out upper bits, to see if they are used.
+    let Inst{3-0}   = Rb{3-0};
+  }
+
+  def 48r : VectorMemory48<opc, (ins Vector:$Ra, Vector:$Rb, Scalar8:$Rs),
+                         !strconcat(asm, " $Rd, $Ra, $Rb")> {
+    bits<10> Rb;
+
+    let Inst{10}    = 0;
+    let Inst{9-0}   = Rb;
+  }
+
+  def 48i : VectorMemory48<opc,
+        (ins Vector:$Ra, immS6opnd:$imm, VectorPred:$P, SetF:$F, Scalar8:$Rs),
+        !strconcat(asm, " $Rd, $Ra, $imm$F$P")> {
+    bits<3>  P;
+    bits<1>  F;
+    bits<6>  imm;
+
+    let Inst{10}    = 1;
+    let Inst{9-7}   = P;
+    let Inst{6}     = F;
+    let Inst{5-0}   = imm;
+  }
+}
+
+defm LD8 : VectorMemory<0x00, "ld8">;
+defm LD16 : VectorMemory<0x01, "ld16">;
+defm LD32 : VectorMemory<0x02, "ld32">;
+
+defm VLOOKUPMH8  : VectorMemory<0x04, "vlookupmh8">;
+defm VLOOKUPMH16 : VectorMemory<0x05, "vlookupmh16">;
+defm VLOOKUPMH32 : VectorMemory<0x06, "vlookupmh32">;
+
+defm VLOOKUPML8  : VectorMemory<0x08, "vlookupml8">;
+defm VLOOKUPML16 : VectorMemory<0x09, "vlookupml16">;
+defm VLOOKUPML32 : VectorMemory<0x0a, "vlookupml32">;
+
+defm VST8  : VectorMemory<0x10, "vst8">;
+defm VST16 : VectorMemory<0x11, "vst16">;
+defm VST32 : VectorMemory<0x12, "vst32">;
+
+defm VINDEXWRITEMH8  : VectorMemory<0x14, "vindexwritemh8">;
+defm VINDEXWRITEMH16 : VectorMemory<0x15, "vindexwritemh16">;
+defm VINDEXWRITEMH32 : VectorMemory<0x16, "vindexwritemh32">;
+
+defm VINDEXWRITEML8  : VectorMemory<0x18, "vindexwriteml8">;
+defm VINDEXWRITEML16 : VectorMemory<0x19, "vindexwriteml16">;
+defm VINDEXWRITEML32 : VectorMemory<0x1a, "vindexwriteml32">;
+
+defm VREADLUT8  : VectorMemory<0x20, "vreadlut8">;
+defm VREADLUT16 : VectorMemory<0x21, "vreadlut16">;
+defm VREADLUT32 : VectorMemory<0x22, "vreadlut32">;
+
+defm VWRITELUT8  : VectorMemory<0x24, "vwritelut8">;
+defm VWRITELUT16 : VectorMemory<0x25, "vwritelut16">;
+defm VWRITELUT32 : VectorMemory<0x26, "vwritelut32">;
+
+defm VREADACC    : VectorMemory<0x60, "vreadacc">;
+defm VREADACCS32 : VectorMemory<0x61, "vreadaccs32">;
+defm VREADACCS16 : VectorMemory<0x63, "vreadaccs16">;
+
+
+class VectorData48<bits<6> opc, dag ins, string asmstr>
+ : InstVC48<(outs Vector:$Rd), ins, asmstr, []> {
+  bits<3>  Rs;
+  bits<10> Rd;
+  bits<10> Ra;
+  bits<1>  X;
+  bits<1>  z;
+
   let Inst{47-42} = 0b111101;
-  let Inst{41}    = 0;
+  let Inst{41}    = X;
   let Inst{40-35} = opc;
   let Inst{34-32} = Rs;
   let Inst{31-22} = Rd;
@@ -68,19 +165,21 @@ class VectorData48<bits<6> opc, dag ins, string asmstr>
 multiclass VectorData<bits<6> opc, string asm> {
   // replicate scalar register Rb over all lanes
   def 48sr : VectorData48<opc,
-        (ins Vector:$Ra, IntReg:$Rb, Scalar8:$Rs, SetF:$F),
-        !strconcat(asm, " $Rd, $Ra, (${Rb})$F")> {
+        (ins Vector:$Ra, IntReg:$Rb, Scalar8:$Rs, SetF:$F, Sext:$X),
+        !strconcat(asm, "$X $Rd, $Ra, (${Rb})$F")> {
     bits<1>  F;
-    bits<6> Rb; // FIXME: you only need 5 bits to encode Rb, this has 6
+    bits<6> Rb; // FIXME: you should only need 4/5 bits to encode Rb, this has 6
 
     let Inst{10}    = 0;
     let Inst{9-7}   = 0b111;
     let Inst{6}     = F;
-    let Inst{5-0}   = Rb;
+    let Inst{5-4}   = 0; // zero out upper bits, to see if they are used.
+    let Inst{3-0}   = Rb{3-0};
   }
 
-  def 48r : VectorData48<opc, (ins Vector:$Ra, Vector:$Rb, Scalar8:$Rs),
-                         !strconcat(asm, " $Rd, $Ra, $Rb")> {
+  def 48r : VectorData48<opc,
+        (ins Vector:$Ra, Vector:$Rb, Scalar8:$Rs, Sext:$X),
+        !strconcat(asm, "$X $Rd, $Ra, $Rb")> {
     bits<10> Rb;
 
     let Inst{10}    = 0;
@@ -88,8 +187,9 @@ multiclass VectorData<bits<6> opc, string asm> {
   }
 
   def 48i : VectorData48<opc,
-        (ins Vector:$Ra, immS6opnd:$imm, VectorPred:$P, SetF:$F, Scalar8:$Rs),
-        !strconcat(asm, " $Rd, $Ra, $imm$F$P")> {
+        (ins Vector:$Ra, immS6opnd:$imm, VectorPred:$P, SetF:$F,
+        Scalar8:$Rs, Sext:$X),
+        !strconcat(asm, "$X $Rd, $Ra, $imm$F$P")> {
     bits<3>  P;
     bits<1>  F;
     bits<6>  imm;
