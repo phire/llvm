@@ -212,6 +212,10 @@ public:
      llvm_unreachable("unimplemented");
      return false;
   }
+  bool isSext() const {
+     llvm_unreachable("unimplemented");
+     return false;
+  }
 
 
   // Override MCParsedAsmOperand.
@@ -265,6 +269,9 @@ public:
     llvm_unreachable("unimplemented");
   }
   void addSetF(MCInst &Inst, unsigned N) const {
+    llvm_unreachable("unimplemented");
+  }
+  void addSext(MCInst &Inst, unsigned N) const {
     llvm_unreachable("unimplemented");
   }
 
@@ -340,6 +347,10 @@ public:
   }
   OperandMatchResultTy
   parseSetF(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
+    llvm_unreachable("unimplemented");
+  }
+  OperandMatchResultTy
+  parseSext(SmallVectorImpl<MCParsedAsmOperand*> &Operands) {
     llvm_unreachable("unimplemented");
   }
 

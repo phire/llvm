@@ -176,7 +176,7 @@ static DecodeStatus readInstruction(const MemoryObject &region,
       return MCDisassembler::Success; // Unimplemented
     }
   }
-  if ((word & 0xf000) == 0xf000) { // 1111 1xxx xxxx xxxx - vector 48 bits
+  if ((word & 0xf800) == 0xf800) { // 1111 1xxx xxxx xxxx - vector 80 bits
     // Vector instruction
     size = 10;
     return MCDisassembler::Fail; // Unimplemented
