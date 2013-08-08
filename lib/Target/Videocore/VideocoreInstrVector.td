@@ -71,6 +71,31 @@ class VectorMemory48<bits<7> opc, dag ins, string asmstr>
   let Inst{11}    = z; // FIXME: isn't used
 }
 
+//   76   72   68   64   60   56   52   48   44   40   36   32   28   24   20   16   12    8    4    0
+// 1111 10pp pppw wrrr dddd dddd ddaa aaaa aaaa F0bb bbbb bbbb DDDD DDAA AAAA XXXX PPPi iiii iiBB BBBB
+// 1111 10pp pppw wrrr dddd dddd ddaa aaaa aaaa F1ll llll llll DDDD DDAA AAAA XXXX PPPi iiii iijj jjjj
+class VectorMemory80<bits<7> opc, dag ins, string asmstr>
+ : InstVC80<(outs Vector:$Rd), ins, asmstr, []> {
+  bits<3>  rep;
+  bits<16> Rd;
+  bits<20> Ra;
+  bits<1>  F;
+  bits<3>  P;
+  bits<7>  ppu; // f_i
+
+  let Inst{79-74} = 0b111110;
+  let Inst{73-67} = opc;
+  let Inst{66-64} = rep;
+  let Inst{63-54} = Rd{9-0};
+  let Inst{53-44} = Ra{9-0};
+  let Inst{43}    = F;
+  let Inst{31-26} = Rd{15-10}; // f_Rd
+  let Inst{25-20} = Ra{15-10}; // f_Ra
+  let Inst{19-16} = Ra{19-16}; // Ra_x
+  let Inst{15-13} = P;
+  let Inst{12-6}  = ppu;
+}
+
 multiclass VectorMemory<bits<7> opc, string asm> {
   // replicate scalar register Rb over all lanes
   def 48sr : VectorMemory48<opc,
@@ -105,6 +130,28 @@ multiclass VectorMemory<bits<7> opc, string asm> {
     let Inst{9-7}   = P;
     let Inst{6}     = F;
     let Inst{5-0}   = imm;
+  }
+
+  // FIXME: Implement the other two vector80 memory instruction formats
+
+  def 80r : VectorMemory80<opc,
+        (ins Vector:$Ra, Vector:$Rb, VectorPred:$P, SetF:$F/*, REP:$rep, PPU:$ppu*/),
+         !strconcat(asm, " $Rd, $Ra, $Rb$F$P")> {
+    bits<16> Rb;
+
+    let Inst{42} = 0;
+    let Inst{41-32} = Rb{9-0};
+    let Inst{5-0} = Rb{15-10};
+  }
+
+  def 80i : VectorMemory80<opc,
+        (ins Vector:$Ra, immS16opnd:$imm, VectorPred:$P, SetF:$F/*, REP:$rep, PPU:$ppu*/),
+         !strconcat(asm, " $Rd, $Ra, $imm$F$P")> {
+    bits<16> imm;
+
+    let Inst{42} = 1;
+    let Inst{41-32} = imm{9-0};
+    let Inst{5-0} = imm{15-10};
   }
 }
 
@@ -162,6 +209,34 @@ class VectorData48<bits<6> opc, dag ins, string asmstr>
   let Inst{11}    = z; // FIXME: isn't used
 }
 
+//   76   72   68   64   60   56   52   48   44   40   36   32   28   24   20   16   12    8    4    0
+// 1111 11Xpp pppp prrr dddd dddd ddaa aaaa aaaa F0bb bbbb bbbb DDDD DDAA AAAA XXXX PPPi iiii iiBB BBBB
+// 1111 11Xpp pppp prrr dddd dddd ddaa aaaa aaaa F1ll llll llll DDDD DDAA AAAA XXXX PPPi iiii iijj jjjj
+class VectorData80<bits<6> opc, dag ins, string asmstr>
+ : InstVC80<(outs Vector:$Rd), ins, asmstr, []> {
+  bits<1>  X;
+  bits<3>  rep;
+  bits<16> Rd;
+  bits<20> Ra;
+  bits<1>  F;
+  bits<3>  P;
+  bits<7>  ppu; // f_i
+
+  let Inst{79-74} = 0b111111;
+  let Inst{73}    = X;
+  let Inst{72-67} = opc;
+  let Inst{66-64} = rep;
+  let Inst{63-54} = Rd{9-0};
+  let Inst{53-44} = Ra{9-0};
+  let Inst{43}    = F;
+  let Inst{31-26} = Rd{15-10}; // f_Rd
+  let Inst{25-20} = Ra{15-10}; // f_Ra
+  let Inst{19-16} = Ra{19-16}; // Ra_x
+  let Inst{15-13} = P;
+  let Inst{12-6}  = ppu;
+}
+
+
 multiclass VectorData<bits<6> opc, string asm> {
   // replicate scalar register Rb over all lanes
   def 48sr : VectorData48<opc,
@@ -198,6 +273,26 @@ multiclass VectorData<bits<6> opc, string asm> {
     let Inst{9-7}   = P;
     let Inst{6}     = F;
     let Inst{5-0}   = imm;
+  }
+
+  def 80r : VectorData80<opc,
+        (ins Vector:$Ra, Vector:$Rb, VectorPred:$P, SetF:$F, Sext:$X/*, REP:$rep, PPU:$ppu*/),
+         !strconcat(asm, "$X $Rd, $Ra, $Rb$F$P")> {
+    bits<16> Rb;
+
+    let Inst{42} = 0;
+    let Inst{41-32} = Rb{9-0};
+    let Inst{5-0} = Rb{15-10};
+  }
+
+  def 80i : VectorData80<opc,
+        (ins Vector:$Ra, immS16opnd:$imm, VectorPred:$P, SetF:$F, Sext:$X/*, REP:$rep, PPU:$ppu*/),
+         !strconcat(asm, "$X $Rd, $Ra, $imm$F$P")> {
+    bits<16> imm;
+
+    let Inst{42} = 1;
+    let Inst{41-32} = imm{9-0};
+    let Inst{5-0} = imm{15-10};
   }
 }
 
