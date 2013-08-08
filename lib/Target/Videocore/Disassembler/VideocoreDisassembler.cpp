@@ -13,6 +13,7 @@
 
 #define DEBUG_TYPE "vc-disassembler"
 
+#include "MCTargetDesc/VideocoreBinaryInstruction.h"
 #include "Videocore.h"
 #include "VideocoreRegisterInfo.h"
 #include "VideocoreSubtarget.h"
@@ -127,64 +128,6 @@ static DecodeStatus DecodeMem_5_12(MCInst &MI,
 
 #include "VideocoreGenDisassemblerTables.inc"
 
-  /// readInstruction - read the correct number of bytes from the
-  /// MemoryObject and the full instruction in the correct bit order
-static DecodeStatus readInstruction(const MemoryObject &region,
-                                      uint64_t address,
-                                      uint64_t &size,
-                                      uint64_t &insn) {
-  uint8_t bytes[4];
-  size = 2; // if we are going to fail, we need to eat at least 2 bytes
-
-  // Read the frist 16 bytes, to determin the length of the instruction
-  if (region.readBytes(address, 2, (uint8_t*)bytes, NULL) == -1) {
-    return MCDisassembler::Fail;
-  }
-  uint16_t word = bytes[0] | bytes[1] << 8;
-
-  if ((word & 0x8000) == 0x0000) { // 0xxx xxxx xxxx xxxx - 16 bits
-    insn = word;
-    size = 2;
-    return MCDisassembler::Success;
-  }
-  if ((word & 0xf000) < 0xe000) { // 1YYx xxxx xxxx xxxx (Where YY != 11)
-    if (region.readBytes(address+2, 2, (uint8_t*)bytes, NULL) != -1) {
-      insn = (uint32_t)(word << 16 | bytes[1] << 8 | bytes[0]);
-      size = 4;
-      return MCDisassembler::Success;
-    }
-  }
-  if ((word & 0xf000) == 0xe000) { // 1110 xxxx xxxx xxxx - 48 bits
-    if (region.readBytes(address+2, 4, (uint8_t*)bytes, NULL) != -1) {
-      insn = ((uint64_t)bytes[3]) << 24 |
-              bytes[2] << 16 |
-              bytes[1] << 8 |
-              bytes[0];
-      insn |= ((uint64_t)word) << 32;
-      size = 6;
-      return MCDisassembler::Success;
-    }
-  }
-  if ((word & 0xf800) == 0xf000) { // 1111 0xxx xxxx xxxx - vector 48 bits
-    if (region.readBytes(address+2, 4, (uint8_t*)bytes, NULL) != -1) {
-      insn = ((uint64_t)bytes[1]) << 24 |
-              bytes[0] << 16 |
-              bytes[3] << 8  |
-              bytes[2];
-      insn |= ((uint64_t)word) << 32;
-      size = 6;
-      return MCDisassembler::Success; // Unimplemented
-    }
-  }
-  if ((word & 0xf800) == 0xf800) { // 1111 1xxx xxxx xxxx - vector 80 bits
-    // Vector instruction
-    size = 10;
-    return MCDisassembler::Fail; // Unimplemented
-  }
-
-  return MCDisassembler::Fail; // readBytes failed
-}
-
 DecodeStatus
 VideocoreDisassembler::getInstruction(MCInst &instr,
                                  uint64_t &Size,
@@ -192,24 +135,20 @@ VideocoreDisassembler::getInstruction(MCInst &instr,
                                  uint64_t Address,
                                  raw_ostream &vStream,
                                  raw_ostream &cStream) const {
-  uint64_t Insn = 0;
+  DecodeStatus Result;
+  VideocoreBinaryInstr Insn(Region, Address);
+  Size = Insn.size();
 
-  DecodeStatus Result = readInstruction(Region, Address, Size, Insn);
-
-  if (Result == MCDisassembler::Fail) {
-    if(Size > 4) {
-      instr.setOpcode((Size == 10) ? VC::VECTOR80 : VC::VECTOR48);
-      return MCDisassembler::SoftFail;
-    }
+  if (Insn.type() == VideocoreBinaryInstr::Invalid)
     return MCDisassembler::Fail;
-  }
 
   // Calling the auto-generated decoder function.
   const uint8_t *Table;
   switch(Size) {
-    case 2: Table = llvm::DecoderTable16; break;
-    case 4: Table = llvm::DecoderTable32; break;
-    case 6: Table = llvm::DecoderTable48; break;
+    case 2:  Table = llvm::DecoderTable16; break;
+    case 4:  Table = llvm::DecoderTable32; break;
+    case 6:  Table = llvm::DecoderTable48; break;
+    case 10: Table = llvm::DecoderTable80; break;
   }
 
   Result = llvm::decodeInstruction(Table, instr, Insn, Address, this, STI);
@@ -218,12 +157,20 @@ VideocoreDisassembler::getInstruction(MCInst &instr,
     return Result;
   }
 
-  switch(Size) {
-    case 2: instr.setOpcode(VC::SCALAR16); break;
-    case 4: instr.setOpcode(VC::SCALAR32); break;
-    case 6: instr.setOpcode(VC::SCALAR48); break;
+  switch(Insn.type()) {
+  case VideocoreBinaryInstr::Scalar16:
+    instr.setOpcode(VC::SCALAR16); break;
+  case VideocoreBinaryInstr::Scalar32:
+    instr.setOpcode(VC::SCALAR32); break;
+  case VideocoreBinaryInstr::Scalar48:
+    instr.setOpcode(VC::SCALAR48); break;
+  case VideocoreBinaryInstr::Vector48:
+    instr.setOpcode(VC::VECTOR48); break;
+  case VideocoreBinaryInstr::Vector80:
+    instr.setOpcode(VC::VECTOR80); break;
+  default:
+    return MCDisassembler::Fail;
   }
-
 
   return MCDisassembler::SoftFail;
 }
