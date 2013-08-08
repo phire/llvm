@@ -275,7 +275,7 @@ defm VMULHDTsu  : VectorData<61, "vmulhdt.su">;
 
 def VLDW : InstVC80<(outs), (ins), "vldw", []> {
 
-  let Inst{79-72} = 0b111101;
+  let Inst{79-72} = 0b11111000;
   let Inst{71} = 0;
 
 }
